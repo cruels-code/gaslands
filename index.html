@@ -701,8 +701,8 @@
         }
 
         .hazard-dot {
-            width: 14px;
-            height: 14px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: rgba(0,0,0,0.4);
             border: 1.5px solid rgba(255,255,255,0.1);
@@ -711,15 +711,25 @@
         }
 
         .hazard-dot.active {
-            background: var(--glow-color);
-            border-color: var(--glow-color);
-            box-shadow: 0 0 8px var(--glow-shadow);
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3 L2 21 L22 21 Z' fill='rgba(30,0,0,0.6)' stroke='%23ef4444' stroke-width='2.5' stroke-linejoin='round'/><text x='12' y='18' font-family='sans-serif' font-size='12' font-weight='900' fill='%23ef4444' text-anchor='middle'>!</text></svg>");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: none;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+            border-radius: 0;
+            background-color: transparent;
         }
 
         .hazard-dot.active.warning {
-            background: var(--danger-red);
-            border-color: var(--danger-red);
-            box-shadow: 0 0 8px var(--danger-red-glow);
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3 L2 21 L22 21 Z' fill='rgba(239,68,68,0.25)' stroke='%23ef4444' stroke-width='2.5' stroke-linejoin='round'/><text x='12' y='18' font-family='sans-serif' font-size='12' font-weight='900' fill='%23ef4444' text-anchor='middle'>!</text></svg>");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: none;
+            box-shadow: 0 0 12px var(--danger-red-glow);
+            border-radius: 0;
+            background-color: transparent;
         }
 
         .wipeout-alert {
@@ -909,10 +919,10 @@
 
         .ammo-checkbox {
             appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 24px;
+            height: 24px;
             border: 1.5px solid var(--text-dark);
-            border-radius: 3px;
+            border-radius: 4px;
             background: transparent;
             cursor: pointer;
             position: relative;
@@ -921,18 +931,18 @@
 
         .ammo-checkbox:checked {
             border-color: var(--glow-color);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .ammo-checkbox:checked::after {
             content: "";
             position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 8px;
-            height: 8px;
+            top: 4px;
+            left: 4px;
+            width: 14px;
+            height: 14px;
             background: var(--glow-color);
-            border-radius: 1px;
+            border-radius: 2px;
             box-shadow: 0 0 4px var(--glow-shadow);
         }
 
@@ -1153,17 +1163,53 @@
             box-shadow: 0 0 10px var(--danger-red-glow);
         }
 
+        @keyframes jitter-anim {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-1.5px, 0.5px); }
+            40% { transform: translate(1.5px, -0.5px); }
+            60% { transform: translate(-0.5px, -1.5px); }
+            80% { transform: translate(0.5px, 1.5px); }
+        }
+
+        @keyframes noise-shift {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 40px; }
+        }
+
+        .play-dashboard-card.distracted-card .play-dashboard-left {
+            position: relative;
+            animation: jitter-anim 0.15s infinite !important;
+        }
+
+        .play-dashboard-card.distracted-card .play-dashboard-left::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-radial-gradient(rgba(255,255,255,0.06) 0px, transparent 1px, transparent 4px),
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 3px);
+            background-size: 100px 100px;
+            pointer-events: none;
+            opacity: 0.5;
+            border-radius: 6px;
+            animation: noise-shift 0.08s steps(3) infinite;
+            z-index: 10;
+        }
+
         @keyframes ghost-fade {
-            0% { opacity: 0.1; }
+            0% { opacity: 0.8; }
             100% { opacity: 1.0; }
         }
 
         .play-dashboard-card.ghost-card {
-            animation: ghost-fade 3s ease-in-out infinite alternate !important;
+            animation: ghost-fade 1.5s ease-in-out infinite alternate !important;
         }
         .play-dashboard-card.ghost-card:hover {
             animation-play-state: paused !important;
-            opacity: 0.85 !important;
+            opacity: 1.0 !important;
         }
 
         .gear-phase-warning {
@@ -2529,12 +2575,12 @@
 
                     let isWipeout = vehicle.hazard >= hazardLimit;
 
-                    // Play Mode image header if exists
+                    // Play Mode image header if exists (styled for floating right next to name)
                     let playImageHtml = "";
                     if (vehicle.imageUrl) {
                         playImageHtml = `
-                            <div style="width: 100%; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid var(--card-border); margin-bottom: 0.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-                                <img src="${vehicle.imageUrl}" style="width: 100%; height: 100%; object-fit: contain;">
+                            <div style="flex: 1.5; max-width: 180px; height: 60px; border-radius: 6px; overflow: hidden; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.15); z-index: 2;">
+                                <img src="${vehicle.imageUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                             </div>
                         `;
                     }
@@ -2562,18 +2608,15 @@
                     card.innerHTML = `
                         <!-- Left side: Info, Status, Hull, Hazards, Gear -->
                         <div class="play-dashboard-left">
-                            <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
-                                <div class="vehicle-name-block">
+                            <div class="card-header" style="border-bottom: none; padding-bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 1rem; width: 100%;">
+                                <div class="vehicle-name-block" style="flex: 1; min-width: 120px;">
                                     <span style="font-family:'Orbitron', sans-serif; font-size: 1.15rem; font-weight:800; letter-spacing:0.5px;">${vehicle.name}</span>
                                     <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">${vehicle.weight} • ${vehicle.type}</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
-                                    <span class="selection-item-cost" style="font-size: 1rem;">${cans} Cans</span>
-                                </div>
+                                ${playImageHtml}
                             </div>
 
                             ${gearWarningHtml}
-                            ${playImageHtml}
 
                             <!-- Status Toggles -->
                             <div class="status-bar">
@@ -3361,7 +3404,7 @@
                     description += `, sponsored by ${appState.sponsor} with custom decals`;
                 }
                 description += loadoutText;
-                description += `. Isometric projection, 3/4 angled view, clear solid white background, studio product lighting, 3d game asset, no shadows, no background environment, perfect for 3D modeling software input, highly detailed clay render. No text, no letters, no labels, no watermarks on the image. Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.`;
+                description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, clear solid white background, studio product lighting, 3d game asset, perfect for 3D modeling software input, highly detailed clay render. No text, no letters, no labels, no watermarks on the image. Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.`;
             } else {
                 // In-Game full color render
                 description = `Isometric 3D model render of a post-apocalyptic Mad Max combat ${typeDesc}`;
@@ -3370,7 +3413,7 @@
                     description += `, sponsored by ${appState.sponsor} with custom decals`;
                 }
                 description += loadoutText;
-                description += `. Isometric projection, 3/4 angled view, full color concept art render, isolated on solid white background for transparency masking, studio product lighting, 3d game asset, no shadows, no background environment, perfect for game UI card art, highly detailed. No text, no letters, no labels, no watermarks on the image. Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.`;
+                description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, full color concept art render, isolated on solid white background for transparency masking, studio product lighting, 3d game asset, perfect for game UI card art, highly detailed. No text, no letters, no labels, no watermarks on the image. Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.`;
             }
 
             output.textContent = description;
