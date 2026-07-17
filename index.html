@@ -3380,8 +3380,10 @@
                     loadout.push(`${facing}${w.name.toLowerCase()}`);
                 }
             });
+            let hasRam = false;
             v.upgrades.forEach(u => {
                 if (u.name === "Ram" || u.name === "Exploding Ram") {
+                    hasRam = true;
                     const facing = u.facing ? `${u.facing.toLowerCase()}-mounted ` : "front-mounted ";
                     loadout.push(`${facing}${u.name.toLowerCase()}`);
                 } else {
@@ -3396,6 +3398,11 @@
                 loadoutText = `, customized with rusty metal spikes and protective armor plating`;
             }
 
+            let ramInstructions = "";
+            if (hasRam) {
+                ramInstructions = " Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.";
+            }
+
             if (purpose === "3d-model") {
                 // 3D Model render
                 description = `Isometric 3D model render of a post-apocalyptic Mad Max combat ${typeDesc}`;
@@ -3404,7 +3411,7 @@
                     description += `, sponsored by ${appState.sponsor} with custom decals`;
                 }
                 description += loadoutText;
-                description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, clear solid white background, studio product lighting, 3d game asset, perfect for 3D modeling software input, highly detailed clay render. No text, no letters, no labels, no watermarks on the image. Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.`;
+                description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, clear solid white background, studio product lighting, 3d game asset, perfect for 3D modeling software input, highly detailed clay render. No text, no letters, no labels, no watermarks on the image.${ramInstructions}`;
             } else {
                 // In-Game full color render
                 description = `Isometric 3D model render of a post-apocalyptic Mad Max combat ${typeDesc}`;
@@ -3413,7 +3420,7 @@
                     description += `, sponsored by ${appState.sponsor} with custom decals`;
                 }
                 description += loadoutText;
-                description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, full color concept art render, isolated on solid white background for transparency masking, studio product lighting, 3d game asset, perfect for game UI card art, highly detailed. No text, no letters, no labels, no watermarks on the image. Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.`;
+                description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, full color concept art render, isolated on solid white background for transparency masking, studio product lighting, 3d game asset, perfect for game UI card art, highly detailed. No text, no letters, no labels, no watermarks on the image.${ramInstructions}`;
             }
 
             output.textContent = description;
