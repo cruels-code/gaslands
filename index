@@ -1747,6 +1747,63 @@
         let activeModalTargetVehicleId = null;
         let activeModalItemType = null; // "weapon", "upgrade", "perk"
 
+        // IndexedDB Image Store Helpers (persists large base64 image data outside of localStorage)
+        const dbName = "GaslandsImageStore";
+        const storeName = "vehicleImages";
+        
+        function openImageDB(callback) {
+            const request = indexedDB.open(dbName, 1);
+            request.onupgradeneeded = function(e) {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName);
+                }
+            };
+            request.onsuccess = function(e) {
+                callback(e.target.result);
+            };
+            request.onerror = function(e) {
+                console.error("IndexedDB Open Error:", e.target.error);
+                callback(null);
+            };
+        }
+
+        function saveImageToDB(vehicleId, base64Data) {
+            openImageDB(db => {
+                if (!db) return;
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                store.put(base64Data, vehicleId);
+            });
+        }
+
+        function getImageFromDB(vehicleId, callback) {
+            openImageDB(db => {
+                if (!db) {
+                    callback(null);
+                    return;
+                }
+                const tx = db.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
+                const request = store.get(vehicleId);
+                request.onsuccess = function(e) {
+                    callback(e.target.result);
+                };
+                request.onerror = function() {
+                    callback(null);
+                };
+            });
+        }
+
+        function deleteImageFromDB(vehicleId) {
+            openImageDB(db => {
+                if (!db) return;
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                store.delete(vehicleId);
+            });
+        }
+
         // Initialize application
         window.addEventListener("DOMContentLoaded", () => {
             loadSponsorsList();
@@ -1759,7 +1816,12 @@
 
         // Save State
         function saveState() {
-            localStorage.setItem("gaslands_manager_state", JSON.stringify(appState));
+            // Keep localStorage clean by stripping large base64 URLs
+            const stateToSave = JSON.parse(JSON.stringify(appState));
+            stateToSave.vehicles.forEach(v => {
+                v.imageUrl = v.imageUrl ? "db_stored" : null; 
+            });
+            localStorage.setItem("gaslands_manager_state", JSON.stringify(stateToSave));
             calculateCansSpent();
         }
 
@@ -1778,6 +1840,31 @@
             if (appState.phase === undefined) appState.phase = 1;
             if (appState.vehicles.length === 0) {
                 addVehicle(false);
+            }
+
+            // Retrieve stored images from IndexedDB asynchronously
+            let imagesLoadedCount = 0;
+            let checkCount = 0;
+            
+            appState.vehicles.forEach(v => {
+                if (v.imageUrl === "db_stored") {
+                    checkCount++;
+                    getImageFromDB(v.id, function(base64Data) {
+                        if (base64Data) {
+                            v.imageUrl = base64Data;
+                        } else {
+                            v.imageUrl = null;
+                        }
+                        imagesLoadedCount++;
+                        if (imagesLoadedCount === checkCount) {
+                            renderVehicles();
+                        }
+                    });
+                }
+            });
+            
+            if (checkCount === 0) {
+                renderVehicles();
             }
         }
 
@@ -1916,6 +2003,7 @@
 
         function removeVehicle(id) {
             appState.vehicles = appState.vehicles.filter(v => v.id !== id);
+            deleteImageFromDB(id);
             renderVehicles();
             saveState();
         }
@@ -2604,6 +2692,7 @@
                     const v = appState.vehicles.find(car => car.id === vehicleId);
                     if (v) {
                         v.imageUrl = maskedDataUrl;
+                        saveImageToDB(vehicleId, maskedDataUrl);
                         renderVehicles();
                         saveState();
                     }
@@ -2649,6 +2738,7 @@
             const v = appState.vehicles.find(car => car.id === vehicleId);
             if (v) {
                 v.imageUrl = null;
+                deleteImageFromDB(vehicleId);
                 renderVehicles();
                 saveState();
             }
