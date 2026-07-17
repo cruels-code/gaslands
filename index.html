@@ -696,18 +696,20 @@
         }
 
         .hazard-dots {
-            display: flex;
-            gap: 0.35rem;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 0.25rem;
+            flex-grow: 1;
         }
 
         .hazard-dot {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.4);
-            border: 1.5px solid rgba(255,255,255,0.1);
+            aspect-ratio: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
 
         .hazard-dot.active {
@@ -715,10 +717,10 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 4px;
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-            border-radius: 0;
-            background-color: transparent;
+            background-color: rgba(0, 0, 0, 0.3);
         }
 
         .hazard-dot.active.warning {
@@ -726,10 +728,10 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            border: none;
+            border: 1px solid var(--danger-red);
+            border-radius: 4px;
             box-shadow: 0 0 12px var(--danger-red-glow);
-            border-radius: 0;
-            background-color: transparent;
+            background-color: rgba(0, 0, 0, 0.3);
         }
 
         .wipeout-alert {
@@ -1158,11 +1160,6 @@
             z-index: 1;
         }
 
-        .play-dashboard-card.distracted-card {
-            border-color: var(--danger-red) !important;
-            box-shadow: 0 0 10px var(--danger-red-glow);
-        }
-
         @keyframes jitter-anim {
             0%, 100% { transform: translate(0, 0); }
             20% { transform: translate(-1.5px, 0.5px); }
@@ -1176,12 +1173,14 @@
             100% { background-position: 20px 40px; }
         }
 
-        .play-dashboard-card.distracted-card .play-dashboard-left {
+        .play-dashboard-card.distracted-card {
+            border-color: var(--danger-red) !important;
+            box-shadow: 0 0 10px var(--danger-red-glow);
             position: relative;
             animation: jitter-anim 0.15s infinite !important;
         }
 
-        .play-dashboard-card.distracted-card .play-dashboard-left::before {
+        .play-dashboard-card.distracted-card::before {
             content: "";
             position: absolute;
             top: 0;
@@ -1200,16 +1199,37 @@
         }
 
         @keyframes ghost-fade {
-            0% { opacity: 0.8; }
+            0% { opacity: 0.70; }
             100% { opacity: 1.0; }
         }
 
-        .play-dashboard-card.ghost-card {
-            animation: ghost-fade 1.5s ease-in-out infinite alternate !important;
+        @keyframes ghost-wave-anim {
+            0% {
+                transform: skewX(-1.5deg) scaleX(0.99);
+                border-radius: 6px 8px 6px 8px;
+            }
+            50% {
+                transform: skewX(1.5deg) scaleX(1.01);
+                border-radius: 8px 6px 8px 6px;
+            }
+            100% {
+                transform: skewX(-1.5deg) scaleX(0.99);
+                border-radius: 6px 8px 6px 8px;
+            }
         }
+
+        .play-dashboard-card.ghost-card {
+            animation: 
+                ghost-fade 0.5s ease-in-out infinite alternate, 
+                ghost-wave-anim 2s ease-in-out infinite alternate !important;
+            filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.2));
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
         .play-dashboard-card.ghost-card:hover {
             animation-play-state: paused !important;
             opacity: 1.0 !important;
+            transform: none !important;
         }
 
         .gear-phase-warning {
@@ -2462,7 +2482,7 @@
                                 classState = "active warning";
                             }
                         }
-                        hazardDotsHtml += `<div class="hazard-dot ${classState}" onclick="setHazard('${vehicle.id}', ${i})"></div>`;
+                        hazardDotsHtml += `<div class="hazard-dot ${classState}" onclick="toggleHazard('${vehicle.id}', ${i})"></div>`;
                     }
 
                     let gearButtonsHtml = "";
@@ -2639,7 +2659,7 @@
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="font-size: 0.75rem; font-weight:bold;">HAZARD TOKENS</span>
                                     <div style="display:flex; align-items:center; gap:0.4rem;">
-                                        <button style="background: transparent; border:none; color: var(--text-muted); cursor:pointer; font-size:0.8rem;" onclick="setHazard('${vehicle.id}', 0)">[Clear]</button>
+                                        <button style="background: transparent; border:none; color: var(--text-muted); cursor:pointer; font-size:0.8rem;" onclick="toggleHazard('${vehicle.id}', 0)">[Clear]</button>
                                         <span style="font-family:'Orbitron', sans-serif; font-size:0.9rem; font-weight:bold; color: var(--glow-color);">${vehicle.hazard} / ${hazardLimit}</span>
                                     </div>
                                 </div>
@@ -3151,10 +3171,18 @@
         }
 
         // Hazards
-        function setHazard(id, val) {
+        function toggleHazard(id, val) {
             const v = appState.vehicles.find(car => car.id === id);
             if (v) {
-                v.hazard = val;
+                if (val === 0) {
+                    v.hazard = 0;
+                } else if (val <= v.hazard) {
+                    // Clicked an already active hazard: reduce hazards to just before this one
+                    v.hazard = val - 1;
+                } else {
+                    // Clicked an inactive hazard: increase hazards to this value
+                    v.hazard = val;
+                }
                 
                 let hazardLimit = 6;
                 if (appState.sponsor === "Rusty's Bootleggers") {
@@ -3163,6 +3191,9 @@
                 
                 if (v.hazard >= hazardLimit) {
                     v.hazard = hazardLimit;
+                }
+                if (v.hazard < 0) {
+                    v.hazard = 0;
                 }
                 renderVehicles();
                 saveState();
