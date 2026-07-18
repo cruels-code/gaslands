@@ -1069,7 +1069,7 @@
             background: rgba(27, 34, 22, 0.85);
             border: 1px solid var(--card-border);
             border-radius: 12px;
-            padding: 1rem;
+            padding: 0.5rem 1rem;
             margin-bottom: 1.5rem;
             display: flex;
             justify-content: space-between;
@@ -1091,12 +1091,12 @@
             flex-direction: column;
             align-items: center;
             border-right: 1px solid var(--card-border);
-            padding-right: 1.5rem;
+            padding-right: 1.0rem;
         }
 
         .votes-counter-big .val {
             font-family: 'Orbitron', sans-serif;
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 900;
             color: var(--glow-color);
             text-shadow: 0 0 10px var(--glow-shadow);
@@ -1757,9 +1757,6 @@
                         <button class="phase-btn" id="phase-btn-6" onclick="setPhase(6)">6</button>
                     </div>
                 </div>
-                <div class="phase-info" id="phase-info-text">
-                    Gear Phase 1: Activating vehicles in Gear 1 or higher.
-                </div>
                 <!-- Throw Dice controls -->
                 <div style="display:flex; align-items:center; gap:0.5rem; margin-left:auto;">
                     <select id="dice-type" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
@@ -2345,10 +2342,6 @@
                 if (btn) {
                     btn.classList.toggle("active", appState.phase === i);
                 }
-            }
-            const infoText = document.getElementById("phase-info-text");
-            if (infoText) {
-                infoText.textContent = `Gear Phase ${appState.phase}: Activating vehicles in Gear ${appState.phase} or higher.`;
             }
 
             calculateCansSpent();
@@ -5311,6 +5304,7 @@
     /*  Physics World                                                       */
     /* ------------------------------------------------------------------ */
     function initPhysics() {
+        if (physicsWorld) return;
         physicsWorld = new CANNON.World();
         physicsWorld.gravity.set(0, -28, 0);
         physicsWorld.broadphase = new CANNON.NaiveBroadphase();
