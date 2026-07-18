@@ -1199,10 +1199,9 @@
         }
 
         @keyframes ghost-fade {
-            0% { opacity: 0.70; }
+            0% { opacity: 0.5; }
             100% { opacity: 1.0; }
         }
-
         @keyframes ghost-wave-anim {
             0% {
                 transform: skewX(-1.5deg) scaleX(0.99);
@@ -1393,6 +1392,103 @@
         .sponsor-info-banner p {
             color: var(--text-muted);
         }
+
+        /* Rules Tab Styling */
+        .rules-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .rules-tab-btn {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        .rules-tab-btn.active, .rules-tab-btn:hover {
+            border-color: var(--glow-color) !important;
+            color: var(--glow-color) !important;
+            background: rgba(255,255,255,0.02) !important;
+            box-shadow: 0 0 5px var(--glow-color-glow);
+        }
+        .rules-tab-panel {
+            display: none;
+        }
+        .rules-tab-panel.active {
+            display: block;
+        }
+        .rules-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .rules-table th, .rules-table td {
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+        }
+        .rules-table th {
+            background: rgba(0,0,0,0.4);
+            font-family: 'Orbitron', sans-serif;
+            color: var(--glow-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        .rules-table tr:nth-child(even) td {
+            background: rgba(255,255,255,0.01);
+        }
+        .rules-table tr:hover td {
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* Tooltip styling */
+        .tooltip-trigger {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted var(--glow-color);
+            color: var(--text-primary);
+            font-weight: normal;
+        }
+        .tooltip-trigger::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            color: var(--text-primary);
+            padding: 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            white-space: normal;
+            width: 250px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 999;
+            border: 1px solid var(--glow-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            line-height: 1.35;
+            pointer-events: none;
+        }
+        .tooltip-trigger:hover::after {
+            visibility: visible;
+            opacity: 1;
+            transform: translate(-50%, -5px);
+        }
     </style>
 </head>
 <body>
@@ -1427,7 +1523,9 @@
                     <button class="mode-btn active" id="garage-mode-btn" onclick="switchMode('garage')">Garage</button>
                     <button class="mode-btn" id="play-mode-btn" onclick="switchMode('play')">Play Mode</button>
                     <button class="mode-btn" id="prompt-mode-btn" onclick="switchMode('prompt')">AI Prompt</button>
+                    <button class="mode-btn" id="rules-mode-btn" onclick="switchMode('rules')">Reference</button>
                 </div>
+
             </div>
         </div>
     </header>
@@ -1566,6 +1664,36 @@
                 </div>
 
                 <button class="btn" onclick="copyPromptTabText()">📋 Copy Prompt & Switch to Garage</button>
+            </div>
+        </div>
+
+        <!-- RULES REFERENCE VIEW -->
+        <div id="rules-view" class="view-section">
+            <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); backdrop-filter: blur(16px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h2 style="font-family: 'Orbitron', sans-serif; text-transform: uppercase; color: var(--glow-color); letter-spacing: 1px; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                        📖 Rulebook Reference Database
+                    </h2>
+                    <input type="text" id="rules-search-input" placeholder="Search rules, weapons, vehicles..." oninput="filterRules()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: 250px; border-radius: 4px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: var(--text-primary);">
+                </div>
+
+                <!-- Rules Sub-tabs -->
+                <div class="rules-tabs">
+                    <button class="rules-tab-btn active" id="rules-subtab-weapons" onclick="switchRulesSubTab('weapons')">Weapons</button>
+                    <button class="rules-tab-btn" id="rules-subtab-vehicles" onclick="switchRulesSubTab('vehicles')">Vehicles</button>
+                    <button class="rules-tab-btn" id="rules-subtab-upgrades" onclick="switchRulesSubTab('upgrades')">Upgrades & Perks</button>
+                    <button class="rules-tab-btn" id="rules-subtab-sponsors" onclick="switchRulesSubTab('sponsors')">Sponsors</button>
+                    <button class="rules-tab-btn" id="rules-subtab-votes" onclick="switchRulesSubTab('votes')">Audience Votes</button>
+                    <button class="rules-tab-btn" id="rules-subtab-keywords" onclick="switchRulesSubTab('keywords')">Rules Glossary</button>
+                </div>
+
+                <!-- Content Panels -->
+                <div id="rules-tab-content-weapons" class="rules-tab-panel active"></div>
+                <div id="rules-tab-content-vehicles" class="rules-tab-panel"></div>
+                <div id="rules-tab-content-upgrades" class="rules-tab-panel"></div>
+                <div id="rules-tab-content-sponsors" class="rules-tab-panel"></div>
+                <div id="rules-tab-content-votes" class="rules-tab-panel"></div>
+                <div id="rules-tab-content-keywords" class="rules-tab-panel"></div>
             </div>
         </div>
     </main>
@@ -2018,17 +2146,23 @@
             document.getElementById("garage-mode-btn").classList.toggle("active", mode === "garage");
             document.getElementById("play-mode-btn").classList.toggle("active", mode === "play");
             document.getElementById("prompt-mode-btn").classList.toggle("active", mode === "prompt");
+            document.getElementById("rules-mode-btn").classList.toggle("active", mode === "rules");
             
             document.getElementById("garage-view").classList.toggle("active", mode === "garage");
             document.getElementById("play-view").classList.toggle("active", mode === "play");
             document.getElementById("prompt-view").classList.toggle("active", mode === "prompt");
+            document.getElementById("rules-view").classList.toggle("active", mode === "rules");
             
-            document.getElementById("budget-input-group").style.display = mode === "play" ? "none" : "flex";
-            document.getElementById("sponsor-input-group").style.display = mode === "play" ? "none" : "flex";
+            const hideControls = (mode === "play" || mode === "rules");
+            document.getElementById("budget-input-group").style.display = hideControls ? "none" : "flex";
+            document.getElementById("sponsor-input-group").style.display = hideControls ? "none" : "flex";
 
             if (mode === "prompt") {
                 populatePromptVehicleDropdown();
                 updatePromptTabOutput();
+            }
+            if (mode === "rules") {
+                renderRulesView();
             }
 
             renderVehicles();
@@ -3545,6 +3679,511 @@
                 }
             }
             return result;
+        }
+
+        // Rules reference subtab controller
+        let currentRulesSubTab = "weapons";
+
+        const KEYWORD_TOOLTIPS = {
+            "Full Throttle": "Full Throttle: This vehicle considers the Long Straight template permitted in any gear, and it is never Hazardous or Trivial.",
+            "Crew Fired": "Crew Fired: Benefits from a 360-degree Arc of Fire, and does not need to declare a facing when purchased.",
+            "Electrical": "Electrical: Mishkin-exclusive technology. Interacts with electrical upgrades.",
+            "Articulated": "Articulated: Cab and trailer are hinged separate elements. Ignores hazards from turning templates.",
+            "Bombs Away": "Bombs Away: Dropped weapons require 0 build slots. May attack with any number of dropped weapons in a single activation.",
+            "Piledriver": "Piledriver: Articulated/Trailer heavy smash attacks.",
+            "Ponderous": "Ponderous: Movement and gear shifting restrictions.",
+            "Indirect": "Indirect: Ignore Terrain and Cover during shooting attacks with this weapon.",
+            "Airborne": "Airborne: Ignores non-tall terrain, dropped weapons, and obstructions. Cannot collide.",
+            "Airwolf": "Airwolf: Gain 2 Hazards at start of activation to pivot up to 90 degrees.",
+            "Splash": "Splash: Targets and attacks every vehicle beneath the shooting template.",
+            "Blast": "Blast: For every un-cancelled hit, the target immediately gains 1 Hazard Token.",
+            "Blitz": "Blitz: Count as having separate copies of this weapon equal to remaining ammo. Fire up to remaining ammo or crew value.",
+            "Pivot": "Pivot: In Gear 1, pivot about center to face any direction.",
+            "Fire": "Fire: Inflicts the On Fire status, causing 1D6 hits at start of each activation (evadable)."
+        };
+
+        function decorateTextWithTooltips(text) {
+            if (!text) return "";
+            let result = text;
+            Object.keys(KEYWORD_TOOLTIPS).forEach(kw => {
+                const tooltipText = KEYWORD_TOOLTIPS[kw];
+                const regex = new RegExp(`\\b(${kw})\\b`, 'gi');
+                result = result.replace(regex, `<span class="tooltip-trigger" data-tooltip="${tooltipText}">$1</span>`);
+            });
+            return result;
+        }
+
+        function switchRulesSubTab(subTab) {
+            currentRulesSubTab = subTab;
+            const tabs = ["weapons", "vehicles", "upgrades", "sponsors", "votes", "keywords"];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`rules-subtab-${t}`);
+                if (btn) btn.classList.toggle("active", t === subTab);
+                const panel = document.getElementById(`rules-tab-content-${t}`);
+                if (panel) panel.classList.toggle("active", t === subTab);
+            });
+            renderRulesView();
+        }
+
+        function filterRules() {
+            renderRulesView();
+        }
+
+        function renderRulesView() {
+            const query = (document.getElementById("rules-search-input")?.value || "").toLowerCase().trim();
+
+            if (currentRulesSubTab === "weapons") {
+                const wDiv = document.getElementById("rules-tab-content-weapons");
+                if (!wDiv) return;
+
+                // Group weapons by categories
+                const categories = ["Basic", "Advanced", "Crew Fired", "Dropped"];
+                let html = "";
+
+                categories.forEach(cat => {
+                    const filtered = WEAPONS.filter(w => w.category === cat && (
+                        w.name.toLowerCase().includes(query) ||
+                        w.range.toLowerCase().includes(query) ||
+                        w.special.toLowerCase().includes(query)
+                    ));
+
+                    if (filtered.length > 0) {
+                        html += `
+                            <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 1.5rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                                ${cat} Weapons
+                            </h3>
+                            <table class="rules-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Range</th>
+                                        <th>Attack Dice</th>
+                                        <th>Build Slots</th>
+                                        <th>Cost</th>
+                                        <th>Special Rules</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${filtered.map(w => `
+                                        <tr>
+                                            <td style="font-weight: bold; color: var(--text-primary);">${w.name}</td>
+                                            <td>${w.range}</td>
+                                            <td>${w.dice}</td>
+                                            <td>${w.slots > 0 ? w.slots : "-"}</td>
+                                            <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">${w.cost} C</td>
+                                            <td>${decorateTextWithTooltips(w.special || "-")}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                    }
+                });
+
+                if (html === "") {
+                    html = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No matching weapons found.</div>`;
+                }
+                wDiv.innerHTML = html;
+            }
+
+            if (currentRulesSubTab === "vehicles") {
+                const vDiv = document.getElementById("rules-tab-content-vehicles");
+                if (!vDiv) return;
+
+                // Basic Vehicles vs Advanced Vehicles
+                const basicList = ["Buggy", "Car", "Performance Car", "Truck", "Heavy Truck", "Bus"];
+                const basicFiltered = VEHICLE_TYPES.filter(v => basicList.includes(v.name) && (
+                    v.name.toLowerCase().includes(query) ||
+                    v.weight.toLowerCase().includes(query) ||
+                    v.special.toLowerCase().includes(query)
+                ));
+
+                const advFiltered = VEHICLE_TYPES.filter(v => !basicList.includes(v.name) && (
+                    v.name.toLowerCase().includes(query) ||
+                    v.weight.toLowerCase().includes(query) ||
+                    v.special.toLowerCase().includes(query)
+                ));
+
+                let html = "";
+                if (basicFiltered.length > 0) {
+                    html += `
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 1.5rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                            Basic Vehicle Types
+                        </h3>
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Weight</th>
+                                    <th>Hull HP</th>
+                                    <th>Handling</th>
+                                    <th>Max Gear</th>
+                                    <th>Crew</th>
+                                    <th>Slots</th>
+                                    <th>Cost</th>
+                                    <th>Special Rules</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${basicFiltered.map(v => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--text-primary);">${v.name}</td>
+                                        <td>${v.weight}</td>
+                                        <td>${v.hull}</td>
+                                        <td>${v.handling}</td>
+                                        <td>${v.maxGear}</td>
+                                        <td>${v.crew}</td>
+                                        <td>${v.slots}</td>
+                                        <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">${v.cost} C</td>
+                                        <td>${decorateTextWithTooltips(v.special || "-")}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                if (advFiltered.length > 0) {
+                    html += `
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 2rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                            Advanced Vehicle Types
+                        </h3>
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Weight</th>
+                                    <th>Hull HP</th>
+                                    <th>Handling</th>
+                                    <th>Max Gear</th>
+                                    <th>Crew</th>
+                                    <th>Slots</th>
+                                    <th>Cost</th>
+                                    <th>Special Rules</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${advFiltered.map(v => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--text-primary);">${v.name}</td>
+                                        <td>${v.weight}</td>
+                                        <td>${v.hull}</td>
+                                        <td>${v.handling}</td>
+                                        <td>${v.maxGear}</td>
+                                        <td>${v.crew}</td>
+                                        <td>${v.slots}</td>
+                                        <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">${v.cost} C</td>
+                                        <td>${decorateTextWithTooltips(v.special || "-")}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                if (html === "") {
+                    html = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No matching vehicles found.</div>`;
+                }
+                vDiv.innerHTML = html;
+            }
+
+            if (currentRulesSubTab === "upgrades") {
+                const uDiv = document.getElementById("rules-tab-content-upgrades");
+                if (!uDiv) return;
+
+                const filteredUpgrades = UPGRADES.filter(u => 
+                    u.name.toLowerCase().includes(query) ||
+                    u.special.toLowerCase().includes(query)
+                );
+
+                const trailers = [
+                    { name: "Trailer (Lightweight)", slots: "-", cost: 4, special: "Trailer. Restricted. Stowage." },
+                    { name: "Trailer (Middleweight)", slots: "(+1)", cost: 8, special: "Trailer. May only be purchased for middleweight and heavyweight vehicles. Restricted. Stowage." },
+                    { name: "Trailer (Heavyweight)", slots: "(+3)", cost: 12, special: "Trailer. May only be purchased for heavyweight vehicles. Restricted. Stowage." }
+                ];
+                const filteredTrailers = trailers.filter(t => 
+                    t.name.toLowerCase().includes(query) ||
+                    t.special.toLowerCase().includes(query)
+                );
+
+                const filteredPerks = PERKS.filter(p => 
+                    p.name.toLowerCase().includes(query) ||
+                    p.class.toLowerCase().includes(query) ||
+                    p.desc.toLowerCase().includes(query)
+                );
+
+                let html = "";
+                if (filteredUpgrades.length > 0) {
+                    html += `
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 1.5rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                            Vehicle Upgrades Table
+                        </h3>
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Upgrade</th>
+                                    <th>Build Slots</th>
+                                    <th>Cost</th>
+                                    <th>Special Rules</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filteredUpgrades.map(u => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--text-primary);">${u.name}</td>
+                                        <td>${u.slots > 0 ? u.slots : "-"}</td>
+                                        <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">${u.cost} C</td>
+                                        <td>${decorateTextWithTooltips(u.special || "-")}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                if (filteredTrailers.length > 0) {
+                    html += `
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 2rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                            Trailer Upgrades Table
+                        </h3>
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Upgrade</th>
+                                    <th>Build Slots</th>
+                                    <th>Cost</th>
+                                    <th>Special Rules</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filteredTrailers.map(t => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--text-primary);">${t.name}</td>
+                                        <td>${t.slots}</td>
+                                        <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">${t.cost} C</td>
+                                        <td>${decorateTextWithTooltips(t.special)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                if (filteredPerks.length > 0) {
+                    html += `
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 2rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                            Crew Perks Reference
+                        </h3>
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Perk Name</th>
+                                    <th>Class</th>
+                                    <th>Cost</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filteredPerks.map(p => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--text-primary);">${p.name}</td>
+                                        <td style="text-transform: capitalize; color: var(--accent-cyan);">${p.class}</td>
+                                        <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">${p.cost} C</td>
+                                        <td>${decorateTextWithTooltips(p.desc)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                if (html === "") {
+                    html = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No matching upgrades or perks found.</div>`;
+                }
+                uDiv.innerHTML = html;
+            }
+
+            if (currentRulesSubTab === "sponsors") {
+                const sDiv = document.getElementById("rules-tab-content-sponsors");
+                if (!sDiv) return;
+
+                const filtered = SPONSORS.filter(s => 
+                    s.name.toLowerCase().includes(query) ||
+                    s.desc.toLowerCase().includes(query) ||
+                    s.sponsored.some(rule => rule.toLowerCase().includes(query))
+                );
+
+                let html = "";
+                if (filtered.length > 0) {
+                    html += `
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Sponsor Name</th>
+                                    <th>Description</th>
+                                    <th>Permitted Classes</th>
+                                    <th>Sponsored Perks / Rules</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(s => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--text-primary); font-size: 0.95rem; white-space: nowrap;">${s.name}</td>
+                                        <td style="font-style: italic; color: var(--text-muted); width: 25%;">${s.desc}</td>
+                                        <td style="text-transform: capitalize; color: var(--accent-cyan); font-size: 0.8rem; width: 20%;">
+                                            ${s.perks.join(', ')}
+                                        </td>
+                                        <td>
+                                            ${s.sponsored && s.sponsored.length > 0 ? 
+                                                `<ul style="margin: 0; padding-left: 1.2rem; font-size: 0.8rem; line-height: 1.45;">
+                                                    ${s.sponsored.map(rule => `<li>${decorateTextWithTooltips(rule)}</li>`).join('')}
+                                                 </ul>` : 
+                                                "None (Standard perk selection)"
+                                            }
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    html = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No matching sponsors found.</div>`;
+                }
+                sDiv.innerHTML = html;
+            }
+
+            if (currentRulesSubTab === "votes") {
+                const vDiv = document.getElementById("rules-tab-content-votes");
+                if (!vDiv) return;
+
+                // Static Tables for Audience Votes
+                let html = `
+                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 1.5rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                        Audience Votes Generation Table
+                    </h3>
+                    <table class="rules-table">
+                        <thead>
+                            <tr>
+                                <th>Condition Trigger</th>
+                                <th>Vote Reward</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>A player has one of their vehicles <strong>Wrecked</strong></td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+1 Audience Vote</td>
+                            </tr>
+                            <tr>
+                                <td>A player starts a round without any active vehicles</td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+2 Audience Votes</td>
+                            </tr>
+                            <tr>
+                                <td>Idris: Selecting Long Straight template in Gear 1-3</td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+1 Audience Vote</td>
+                            </tr>
+                            <tr>
+                                <td>Slime: Begin Wipeout with more Hazard Tokens than Hull HP</td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+1 Audience Vote</td>
+                            </tr>
+                            <tr>
+                                <td>The Warden: A Middleweight / Heavyweight vehicle <strong>Explodes</strong></td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+1 / +2 Audience Votes</td>
+                            </tr>
+                            <tr>
+                                <td>Rutherford: Causing 6+ hits in a single Attack Step</td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+1 Audience Vote</td>
+                            </tr>
+                            <tr>
+                                <td>Highway Patrol: Enemy 'bogey' Wipes Out / is Wrecked</td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+2 / +4 Audience Votes</td>
+                            </tr>
+                            <tr>
+                                <td>Verney: Placed dropped weapon template is removed from play</td>
+                                <td style="color: var(--accent-cyan); font-weight: bold;">+1 Audience Vote</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 2rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                        Spending Audience Votes (Effects)
+                    </h3>
+                    <table class="rules-table">
+                        <thead>
+                            <tr>
+                                <th>Effect Name</th>
+                                <th>Cans Cost</th>
+                                <th>Description / Mechanical Benefit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-primary);">Thunderous Applause</td>
+                                <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">1 Vote</td>
+                                <td>Select any vehicle you control. That vehicle immediately clears <strong>D6 Hazard Tokens</strong>.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-primary);">Burn Rubber</td>
+                                <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">1 Vote</td>
+                                <td>Select any vehicle you control. That vehicle may immediately shift Gear up or down by 1, gaining 1 Hazard Token as normal.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-primary);">Reload Weapon</td>
+                                <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">2 Votes</td>
+                                <td>Select a limited-ammo weapon or upgrade on one of your vehicles. Add 1 Ammo Token to it.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-primary);">Executive Intervention</td>
+                                <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">2 Votes</td>
+                                <td>Choose an enemy vehicle. That vehicle gains Hazard Tokens until it has 5 Hazards.</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: bold; color: var(--text-primary);">Respawn Wreck</td>
+                                <td style="font-weight: bold; color: var(--glow-color); font-family: 'Orbitron', sans-serif;">3 Votes</td>
+                                <td>Respawn a Wrecked vehicle back into play at half its starting Hull Points. (Order of the Inferno: Explodes on respawn. Beverly: Costs <strong>1 Vote</strong>, vehicle gets Ghost Rider).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                vDiv.innerHTML = html;
+            }
+
+            if (currentRulesSubTab === "keywords") {
+                const kDiv = document.getElementById("rules-tab-content-keywords");
+                if (!kDiv) return;
+
+                const filtered = Object.keys(KEYWORD_TOOLTIPS).filter(k => 
+                    k.toLowerCase().includes(query) ||
+                    KEYWORD_TOOLTIPS[k].toLowerCase().includes(query)
+                );
+
+                let html = "";
+                if (filtered.length > 0) {
+                    html += `
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--glow-color); margin-top: 1.5rem; text-transform: uppercase; font-size: 0.9rem; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 0.3rem;">
+                            Rulebook Glossary Terms
+                        </h3>
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Glossary Keyword</th>
+                                    <th>Detailed Mechanical Rules</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(k => `
+                                    <tr>
+                                        <td style="font-weight: bold; color: var(--accent-cyan); font-size: 0.9rem; white-space: nowrap;">${k}</td>
+                                        <td style="line-height: 1.45; font-size: 0.85rem;">${KEYWORD_TOOLTIPS[k]}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    html = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">No matching glossary terms found.</div>`;
+                }
+                kDiv.innerHTML = html;
+            }
         }
 
         // Periodic distracted text glitch animator
