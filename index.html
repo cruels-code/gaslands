@@ -1489,9 +1489,49 @@
             opacity: 1;
             transform: translate(-50%, -5px);
         }
+
+        /* Sponsor Logo Sprites */
+        .sponsor-logo {
+            background-image: url('sponsor_logos.png');
+            background-size: 330px 180px; /* 5 columns of 66px, 3 rows of 60px */
+            background-repeat: no-repeat;
+            display: inline-block;
+            vertical-align: middle;
+            filter: url(#remove-white);
+            width: 66px;
+            height: 60px; /* full cell height to show the text labels */
+            overflow: hidden;
+        }
+        .sponsor-logo.logo-sponsorless { background-position: 0px 0px; }
+        .sponsor-logo.logo-rutherford { background-position: -66px 0px; }
+        .sponsor-logo.logo-miyazaki { background-position: -132px 0px; }
+        .sponsor-logo.logo-mishkin { background-position: -198px 0px; }
+        .sponsor-logo.logo-idris { background-position: -264px 0px; }
+        .sponsor-logo.logo-slime { background-position: -66px -60px; }
+        .sponsor-logo.logo-the-warden { background-position: -132px -60px; }
+        .sponsor-logo.logo-scarlett { background-position: -198px -60px; }
+        .sponsor-logo.logo-highway-patrol { background-position: 0px 0px; } /* Fallback: not present on this sheet */
+        .sponsor-logo.logo-verney { background-position: -264px -60px; }
+        .sponsor-logo.logo-maxxine { background-position: 0px -120px; }
+        .sponsor-logo.logo-beverly { background-position: -66px -120px; }
+        .sponsor-logo.logo-the-order-of-the-inferno { background-position: -132px -120px; }
+        .sponsor-logo.logo-rustys-bootleggers { background-position: -198px -120px; }
     </style>
 </head>
 <body>
+    <!-- SVG color matrix filter to remove green background from logos -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="remove-white">
+                <feColorMatrix type="matrix" values="
+                    1 0 0 0 0
+                    0 1 0 0 0
+                    0 0 1 0 0
+                    1 1.5 0.5 0 -0.7
+                "/>
+            </filter>
+        </defs>
+    </svg>
 
     <header>
         <div class="hazard-stripes"></div>
@@ -2343,6 +2383,10 @@
                 const cans = calculateVehicleCans(vehicle);
                 const slotsUsed = calculateVehicleSlots(vehicle);
                 const slotsMax = baseInfo.slots;
+
+                // Calculate sponsor logo class and HTML
+                const sponsorClass = `logo-${appState.sponsor.toLowerCase().replace(/'s/g, 's').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+                const sponsorLogoHtml = `<div class="sponsor-logo ${sponsorClass}" title="${appState.sponsor}" style="flex-shrink: 0;"></div>`;
                 
                 // Max Hull calculations
                 let currentMaxHull = baseInfo.hull;
@@ -2522,13 +2566,16 @@
                     card.className = "vehicle-card";
                     card.innerHTML = `
                         <div class="card-header">
-                            <div class="vehicle-name-block">
-                                <input type="text" class="vehicle-title-input" value="${vehicle.name}" onchange="updateVehicleName('${vehicle.id}', this.value)" placeholder="Car Name">
-                                <select onchange="updateVehicleType('${vehicle.id}', this.value)" style="margin-top:0.2rem; font-size: 0.8rem; padding: 0.2rem;">
-                                    ${VEHICLE_TYPES.map(t => `<option value="${t.name}" ${t.name === vehicle.type ? 'selected' : ''}>${t.name.toUpperCase()} (${t.cost} Cans)</option>`).join('')}
-                                </select>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 120px;">
+                                <div class="vehicle-name-block" style="flex: 1;">
+                                    <input type="text" class="vehicle-title-input" value="${vehicle.name}" onchange="updateVehicleName('${vehicle.id}', this.value)" placeholder="Car Name">
+                                    <select onchange="updateVehicleType('${vehicle.id}', this.value)" style="margin-top:0.2rem; font-size: 0.8rem; padding: 0.2rem; width: 100%;">
+                                        ${VEHICLE_TYPES.map(t => `<option value="${t.name}" ${t.name === vehicle.type ? 'selected' : ''}>${t.name.toUpperCase()} (${t.cost} Cans)</option>`).join('')}
+                                    </select>
+                                </div>
+                                ${sponsorLogoHtml}
                             </div>
-                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; margin-left: 0.5rem; justify-content: center;">
                                 <span class="selection-item-cost" style="font-size: 1.1rem;">${cans} Cans</span>
                                 <span style="font-size: 0.75rem; color: var(--text-muted);">${slotsUsed} / ${slotsMax} Slots</span>
                                 <button class="remove-item-btn" style="font-size: 0.75rem; margin-top: 0.35rem;" onclick="removeVehicle('${vehicle.id}')">Delete Vehicle</button>
@@ -2763,9 +2810,12 @@
                         <!-- Left side: Info, Status, Hull, Hazards, Gear -->
                         <div class="play-dashboard-left">
                             <div class="card-header" style="border-bottom: none; padding-bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 1rem; width: 100%;">
-                                <div class="vehicle-name-block" style="flex: 1; min-width: 120px;">
-                                    <span style="font-family:'Orbitron', sans-serif; font-size: 1.15rem; font-weight:800; letter-spacing:0.5px;">${vehicle.name}</span>
-                                    <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">${vehicle.weight} • ${vehicle.type}</span>
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex: 1; min-width: 120px;">
+                                    <div class="vehicle-name-block">
+                                        <span style="font-family:'Orbitron', sans-serif; font-size: 1.15rem; font-weight:800; letter-spacing:0.5px;">${vehicle.name}</span>
+                                        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">${vehicle.weight} • ${vehicle.type}</span>
+                                    </div>
+                                    ${sponsorLogoHtml}
                                 </div>
                                 ${playImageHtml}
                             </div>
