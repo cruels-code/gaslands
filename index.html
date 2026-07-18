@@ -1423,6 +1423,26 @@
         .rules-tab-panel {
             display: none;
         }
+        
+        /* Quick Rule tags styling */
+        .quick-rule-tag {
+            background: rgba(212, 197, 169, 0.1);
+            border: 1px solid rgba(212, 197, 169, 0.2);
+            color: var(--text-muted);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+        }
+        .quick-rule-tag:hover {
+            background: var(--accent-orange-glow);
+            border-color: var(--glow-color);
+            color: var(--text-primary);
+            box-shadow: 0 0 5px var(--accent-orange-glow);
+        }
         .rules-tab-panel.active {
             display: block;
         }
@@ -1564,6 +1584,7 @@
                     <button class="mode-btn" id="play-mode-btn" onclick="switchMode('play')">Play Mode</button>
                     <button class="mode-btn" id="prompt-mode-btn" onclick="switchMode('prompt')">AI Prompt</button>
                     <button class="mode-btn" id="rules-mode-btn" onclick="switchMode('rules')">Reference</button>
+                    <button class="mode-btn" id="rulecheck-mode-btn" onclick="switchMode('rulecheck')">Rule Check</button>
                 </div>
 
             </div>
@@ -1736,6 +1757,47 @@
                 <div id="rules-tab-content-keywords" class="rules-tab-panel"></div>
             </div>
         </div>
+
+        <!-- RULE CHECK VIEW -->
+        <div id="rulecheck-view" class="view-section">
+            <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); backdrop-filter: blur(16px);">
+                <div style="border-bottom: 1px solid var(--card-border); padding-bottom: 0.8rem; margin-bottom: 1.5rem;">
+                    <h2 style="font-family: 'Orbitron', sans-serif; text-transform: uppercase; color: var(--glow-color); letter-spacing: 1px; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
+                        🔍 Rulebook Search & Keyword Check
+                    </h2>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">Search the complete rules reference database for keywords, phases, actions, or specific rules text.</p>
+                </div>
+
+                <!-- Search Input area -->
+                <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem;">
+                    <input type="text" id="rulecheck-search-input" placeholder="Type to search rules (e.g. Collision, Wipeout, Blast, Fire, Skid)..." oninput="handleRuleCheckSearch()" style="flex: 1; padding: 0.6rem 1rem; font-size: 0.95rem; border-radius: 6px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.4); color: var(--text-primary); outline: none; font-family: inherit;">
+                    <button class="action-btn" onclick="clearRuleCheckSearch()" style="padding: 0.6rem 1.2rem; border-radius: 6px; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; cursor: pointer; background: var(--bg-dark); color: var(--text-primary); border: 1px solid var(--card-border); transition: all 0.2s;">Clear</button>
+                </div>
+
+                <!-- Quick tags container -->
+                <div style="margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: bold; margin-right: 0.5rem;">Quick Topics:</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Collision')">Collision</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Wipeout')">Wipeout</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Blast')">Blast</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Hazards')">Hazards</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Skid')">Skid Dice</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Nitro')">Nitro</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Fire')">Fire / Flame</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Wreck')">Wrecks</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('T-Bone')">T-Bone Smash</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Dropped')">Dropped Weapons</span>
+                    <span class="quick-rule-tag" onclick="quickRuleSearch('Audience')">Audience Votes</span>
+                </div>
+
+                <!-- Results container -->
+                <div id="rulecheck-results-container" style="display: flex; flex-direction: column; gap: 1rem; max-height: 600px; overflow-y: auto; padding-right: 0.5rem;">
+                    <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-style: italic;">
+                        Type in the search bar or click a Quick Topic tag above to check rulebook pages.
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Modal for adding items -->
@@ -1753,6 +1815,7 @@
     </div>
 
     <!-- Gaslands Rules Database -->
+    <script src="rules_db.js"></script>
     <script>
         // Database arrays
         const VEHICLE_TYPES = [
@@ -1762,7 +1825,7 @@
             { name: "Truck", weight: "Middleweight", hull: 12, handling: 2, maxGear: 4, crew: 3, slots: 3, cost: 15, special: "" },
             { name: "Heavy Truck", weight: "Heavyweight", hull: 14, handling: 2, maxGear: 3, crew: 4, slots: 5, cost: 25, special: "" },
             { name: "Bus", weight: "Heavyweight", hull: 16, handling: 2, maxGear: 3, crew: 8, slots: 3, cost: 30, special: "" },
-            { name: "Drag Racer", weight: "Lightweight", hull: 4, handling: 4, maxGear: 6, crew: 1, slots: 2, cost: 5, special: "Jet Engine: Infinite Nitro Booster ammo, explodes on wreck, must booster every turn." },
+            { name: "Drag Racer", weight: "Lightweight", hull: 6, handling: 4, maxGear: 6, crew: 1, slots: 2, cost: 5, special: "Jet Engine: Infinite Nitro Booster ammo, explodes on wreck, must booster every turn." },
             { name: "Bike", weight: "Lightweight", hull: 4, handling: 5, maxGear: 6, crew: 1, slots: 1, cost: 5, special: "Full Throttle (Long Straight always permitted), Pivot at Gear 1." },
             { name: "Bike with Sidecar", weight: "Lightweight", hull: 4, handling: 5, maxGear: 6, crew: 2, slots: 2, cost: 8, special: "Full Throttle (Long Straight always permitted), Pivot at Gear 1." },
             { name: "Ice Cream Truck", weight: "Middleweight", hull: 10, handling: 2, maxGear: 4, crew: 2, slots: 2, cost: 8, special: "Infuriating Jingle: Tailgaters get no collision hazards step 6." },
@@ -1823,7 +1886,7 @@
             { name: "Armour Plating", slots: 1, cost: 4, special: "+2 Hull Points. Can be purchased multiple times." },
             { name: "Experimental Nuclear Engine", slots: 0, cost: 5, electrical: true, special: "Mishkin only. Non-lightweight only. +2 Max Gear, Long Straight is permitted, explodes on Flip failure." },
             { name: "Experimental Teleporter", slots: 0, cost: 7, electrical: true, special: "Mishkin only. Teleport start of activation on Skid Die check." },
-            { name: "Exploding Ram", slots: 0, cost: 3, special: "Declare facing. Non-lightweight only. +6 attack dice. Suffer 1 damage for each 1 or 2 rolled. (Once)" },
+            { name: "Exploding Ram", slots: 0, cost: 3, ammo: 1, special: "Declare facing. Non-lightweight only. +6 attack dice. Suffer 1 damage for each 1 or 2 rolled. (Once)" },
             { name: "Extra Crewmember", slots: 0, cost: 4, special: "+1 Crew, up to double the vehicle's starting Crew Value." },
             { name: "Improvised Sludge Thrower", slots: 1, cost: 2, special: "May place burst template anywhere in Medium range, 360-deg Arc." },
             { name: "Louder Siren", slots: 0, cost: 2, special: "Highway Patrol only. Siren applies to any enemy vehicle, not just bogey." },
@@ -2187,13 +2250,15 @@
             document.getElementById("play-mode-btn").classList.toggle("active", mode === "play");
             document.getElementById("prompt-mode-btn").classList.toggle("active", mode === "prompt");
             document.getElementById("rules-mode-btn").classList.toggle("active", mode === "rules");
+            document.getElementById("rulecheck-mode-btn").classList.toggle("active", mode === "rulecheck");
             
             document.getElementById("garage-view").classList.toggle("active", mode === "garage");
             document.getElementById("play-view").classList.toggle("active", mode === "play");
             document.getElementById("prompt-view").classList.toggle("active", mode === "prompt");
             document.getElementById("rules-view").classList.toggle("active", mode === "rules");
+            document.getElementById("rulecheck-view").classList.toggle("active", mode === "rulecheck");
             
-            const hideControls = (mode === "play" || mode === "rules");
+            const hideControls = (mode === "play" || mode === "rules" || mode === "rulecheck");
             document.getElementById("budget-input-group").style.display = hideControls ? "none" : "flex";
             document.getElementById("sponsor-input-group").style.display = hideControls ? "none" : "flex";
 
@@ -2203,6 +2268,9 @@
             }
             if (mode === "rules") {
                 renderRulesView();
+            }
+            if (mode === "rulecheck") {
+                document.getElementById("rulecheck-search-input").focus();
             }
 
             renderVehicles();
@@ -4266,6 +4334,148 @@
                 });
             });
         }, 400);
+
+        // Rule Check Search Logic
+        function handleRuleCheckSearch() {
+            const query = document.getElementById("rulecheck-search-input").value;
+            renderRuleCheckResults(query);
+        }
+
+        function quickRuleSearch(term) {
+            document.getElementById("rulecheck-search-input").value = term;
+            renderRuleCheckResults(term);
+        }
+
+        function clearRuleCheckSearch() {
+            document.getElementById("rulecheck-search-input").value = "";
+            renderRuleCheckResults("");
+        }
+
+        function renderRuleCheckResults(query) {
+            const container = document.getElementById("rulecheck-results-container");
+            const q = query.toLowerCase().trim();
+            
+            if (!q) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-style: italic;">
+                        Type in the search bar or click a Quick Topic tag above to check rulebook pages.
+                    </div>
+                `;
+                return;
+            }
+            
+            if (typeof RULES_DATABASE === "undefined") {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--danger-red); padding: 2rem 1rem;">
+                        ⚠️ Rules database failed to load. Ensure rules_db.js is pushed to repository.
+                    </div>
+                `;
+                return;
+            }
+            
+            const results = [];
+            RULES_DATABASE.forEach(item => {
+                const titleMatch = item.title.toLowerCase().includes(q);
+                const textMatch = item.text.toLowerCase().includes(q);
+                
+                if (titleMatch || textMatch) {
+                    const lines = item.text.split("\n");
+                    const matchedSnippets = [];
+                    
+                    lines.forEach((line, idx) => {
+                        if (line.toLowerCase().includes(q)) {
+                            const before = idx > 0 ? lines[idx-1].trim() : "";
+                            const current = line.trim();
+                            const after = idx < lines.length - 1 ? lines[idx+1].trim() : "";
+                            
+                            let snippet = "";
+                            if (before) snippet += `<span style="opacity: 0.6; font-size: 0.8rem;">... ${before}</span><br>`;
+                            snippet += `<strong style="color: var(--text-primary); font-size: 0.9rem;">${highlightText(current, q)}</strong>`;
+                            if (after) snippet += `<br><span style="opacity: 0.6; font-size: 0.8rem;">${after} ...</span>`;
+                            
+                            matchedSnippets.push(snippet);
+                        }
+                    });
+                    
+                    if (matchedSnippets.length === 0 && lines.length > 0) {
+                        matchedSnippets.push(`<span style="opacity: 0.8;">${lines[0]}</span>`);
+                    }
+                    
+                    results.push({
+                        page: item.page,
+                        title: item.title,
+                        snippets: matchedSnippets.slice(0, 3),
+                        fullText: item.text
+                    });
+                }
+            });
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
+                        No matching rules pages found for "${query}".
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = "";
+            results.forEach((res, idx) => {
+                const uniqueId = `full-text-${res.page.replace(/\s+/g, '-')}-${idx}`;
+                const highlightedFull = highlightText(res.fullText.replace(/\n/g, '<br>'), q);
+                
+                html += `
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem; transition: border-color 0.2s; display: flex; flex-direction: column; gap: 0.8rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(212,197,169,0.1); padding-bottom: 0.5rem; margin-bottom: 0.2rem;">
+                            <span style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--glow-color); text-transform: uppercase;">${res.page}</span>
+                            <span style="font-weight: bold; font-size: 0.9rem; color: var(--text-primary); max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${res.title}">${res.title}</span>
+                        </div>
+                        
+                        <!-- Snippets view -->
+                        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                            ${res.snippets.map(snip => `<div style="border-left: 3px solid var(--glow-color); padding-left: 0.8rem; line-height: 1.4;">${snip}</div>`).join("")}
+                        </div>
+                        
+                        <!-- Expand button -->
+                        <div style="margin-top: 0.2rem;">
+                            <button id="btn-${uniqueId}" class="action-btn" onclick="toggleFullRulePage('${uniqueId}')" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; font-family: 'Orbitron', sans-serif; border-radius: 4px; cursor: pointer;">📄 Show Full Page</button>
+                        </div>
+                        
+                        <!-- Hidden full text container -->
+                        <div id="${uniqueId}" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid var(--card-border); border-radius: 6px; padding: 1rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-primary); max-height: 350px; overflow-y: auto; font-family: 'Outfit', sans-serif; text-align: left;">
+                            ${highlightedFull}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleFullRulePage(pageId) {
+            const el = document.getElementById(pageId);
+            const btn = document.getElementById('btn-' + pageId);
+            if (el.style.display === "none") {
+                el.style.display = "block";
+                btn.innerHTML = "📖 Hide Full Page";
+                btn.style.borderColor = "var(--glow-color)";
+                btn.style.color = "var(--glow-color)";
+            } else {
+                el.style.display = "none";
+                btn.innerHTML = "📄 Show Full Page";
+                btn.style.borderColor = "";
+                btn.style.color = "";
+            }
+        }
+
+        function highlightText(text, term) {
+            if (!term) return text;
+            const re = new RegExp(`(${escapeRegExp(term)})`, "gi");
+            return text.replace(re, `<mark style="background: var(--accent-orange-glow); color: var(--accent-orange); border: 1px solid var(--glow-color); border-radius: 2px; padding: 0px 2px;">$1</mark>`);
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
     </script>
 </body>
 </html>
