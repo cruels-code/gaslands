@@ -8,6 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- 3D Dice: Three.js UMD + Cannon.js (file:// compatible, no ES modules needed) -->
+    <script src="three.min.js"></script>
+    <script src="cannon.min.js"></script>
+    <script src="sprites.js"></script>
+    <script src="d6_sprites.js"></script>
     
     <style>
         :root {
@@ -749,7 +755,75 @@
             text-transform: uppercase;
         }
 
+        /* ===== 3D DICE OVERLAY ===== */
+        #dice3d-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+        }
+        #dice3d-overlay.active { display: block; }
+        #dice3d-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .dice3d-result-strip {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 20, 8, 0.88);
+            border: 1px solid rgba(100,200,50,0.35);
+            border-radius: 14px;
+            padding: 0.8rem 2rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(100,200,50,0.15);
+        }
+        .dice3d-result-strip.visible { opacity: 1; }
+        .dice3d-result-strip .rs-shift  { color: #64c832; }
+        .dice3d-result-strip .rs-slide  { color: #4a90e6; }
+        .dice3d-result-strip .rs-spin   { color: #e63264; }
+        .dice3d-result-strip .rs-hazard { color: #e6a020; }
+        .dice3d-trng {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.62rem;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            letter-spacing: 1px;
+        }
+        .dice3d-trng.trng-ok    { background: rgba(80,200,80,0.12); border: 1px solid rgba(80,200,80,0.3); color: #80e080; }
+        .dice3d-trng.trng-local { background: rgba(200,150,40,0.12); border: 1px solid rgba(200,150,40,0.3); color: #e0b040; }
+        .dice3d-dismiss {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
         /* Game Turn & Phase Tracker */
+
         .turn-phase-tracker {
             background: rgba(27, 34, 22, 0.85);
             border: 1px solid var(--card-border);
@@ -1055,6 +1129,9 @@
             background: rgba(255, 255, 255, 0.02);
             box-shadow: 0 0 8px var(--glow-shadow);
         }
+
+
+
 
         .vote-action-btn:disabled {
             opacity: 0.4;
@@ -1683,6 +1760,27 @@
                 <div class="phase-info" id="phase-info-text">
                     Gear Phase 1: Activating vehicles in Gear 1 or higher.
                 </div>
+                <!-- Throw Dice controls -->
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-left:auto;">
+                    <select id="dice-type" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
+                        <option value="skid" selected>Skid Dice</option>
+                        <option value="d6">Standard D6</option>
+                    </select>
+                    <select id="throw-dice-count" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
+                        <option value="1">1 Die</option>
+                        <option value="2">2 Dice</option>
+                        <option value="3" selected>3 Dice</option>
+                        <option value="4">4 Dice</option>
+                        <option value="5">5 Dice</option>
+                        <option value="6">6 Dice</option>
+                    </select>
+                    <button id="dice-log-toggle-btn" onclick="toggleDiceLog()" style="font-family:'Orbitron',sans-serif; font-size:1.0rem; padding:0.25rem 0.6rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.4); color:var(--text-primary); cursor:pointer; transition:all 0.2s;" title="Toggle Dice History">
+                        🕒
+                    </button>
+                    <button id="throw-dice-btn" onclick="throwSkidDice3D()" style="font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:1px; padding:0.38rem 0.9rem; border-radius:8px; border:2px solid var(--glow-color); background:linear-gradient(135deg,rgba(100,200,50,0.18),rgba(60,140,20,0.08)); color:var(--glow-color); cursor:pointer; transition:all 0.2s; text-transform:uppercase;">
+                        🎲 Throw Dice
+                    </button>
+                </div>
             </div>
 
             <!-- Global In-Game Audience Votes HUB -->
@@ -1719,10 +1817,27 @@
                         </button>
                     </div>
                 </div>
-                <div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem; align-items:flex-end;">
+
                     <button class="btn btn-danger" onclick="confirmResetGame()">Reset Game Stats</button>
                 </div>
             </div>
+
+            <!-- Roll History Log -->
+            <div id="dice-log" style="position:fixed; bottom:20px; left:20px; width:220px; background:rgba(10,20,10,0.8); border:1px solid rgba(100,200,50,0.2); border-radius:8px; padding:10px; font-family:'Orbitron',sans-serif; font-size:0.75rem; color:var(--text-muted); z-index:1000; pointer-events:none; display:none;">
+                <div style="color:var(--glow-color); border-bottom:1px solid rgba(100,200,50,0.2); padding-bottom:5px; margin-bottom:5px; font-weight:bold;">ROLL HISTORY</div>
+                <div id="dice-log-content">No rolls yet...</div>
+            </div>
+
+            <!-- ===== 3D DICE OVERLAY ===== -->
+            <div id="dice3d-overlay" onclick="dice3dOverlayClick(event)">
+                <canvas id="dice3d-canvas"></canvas>
+                <div id="dice3d-result" class="dice3d-result-strip"></div>
+                <div id="dice3d-trng-badge" class="dice3d-trng"></div>
+                <div id="dice3d-dismiss" class="dice3d-dismiss">Tap anywhere to dismiss</div>
+            </div>
+
+
 
             <div class="vehicles-grid" id="play-vehicles-container">
                 <!-- In-game vehicle dashboards load here -->
@@ -3635,7 +3750,6 @@
                         { name: "Trailer (Middleweight)", slots: 1, cost: 8, special: "Middleweight/Heavyweight only. Articulated. Stowage: cab/trailer mount." },
                         { name: "Trailer (Heavyweight)", slots: 3, cost: 12, special: "Heavyweight only. Articulated. Stowage: cab/trailer mount." }
                     ];
-
                     trailers.forEach(t => {
                         if (t.name.toLowerCase().includes(query)) {
                             const vBase = VEHICLE_TYPES.find(types => types.name === vehicle.type);
@@ -3676,7 +3790,6 @@
                         { name: "Old Fashioned Corn Liquor", slots: 0, cost: 0, special: "Free trailer cargo. Enemies in Medium range gain 1 additional hazard whenever they gain hazard tokens." },
                         { name: "Cattle-Hammer", slots: 0, cost: 0, special: "Free trailer cargo. Adjust gear to any gear up to max during Wipeout step or collisions." }
                     ];
-
                     cargo.forEach(c => {
                         if (c.name.toLowerCase().includes(query)) {
                             const item = document.createElement("div");
@@ -3928,6 +4041,7 @@
         function setPhase(phaseVal) {
             appState.phase = phaseVal;
             renderHeader();
+            renderVehicles();
             saveState();
         }
 
@@ -4912,6 +5026,593 @@
         function escapeRegExp(string) {
             return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
+
+        // Global bridge — called by the Throw Dice button (in turn-phase-tracker)
+        function throwSkidDice3D() {
+            const n = parseInt(document.getElementById('throw-dice-count').value, 10);
+            if (window._dice3dReady) {
+                window._throwDice3D(n);
+            } else {
+                alert('3D dice are still loading — please try again in a moment.');
+            }
+        }
+    </script>
+
+    <!-- ===== 3D DICE ROLLER — Standard Script (file:// compatible) ===== -->
+    <script>
+    /* THREE and CANNON are globals from the UMD scripts loaded above */
+
+    /* ------------------------------------------------------------------ */
+    /*  RoundedBoxGeometry — inlined (no addons import needed)             */
+    /*  Modifies a BoxGeometry's vertices to bevel all edges/corners.      */
+    /* ------------------------------------------------------------------ */
+    function makeRoundedBoxGeometry(width, height, depth, segments, radius) {
+        const geo = new THREE.BoxGeometry(width, height, depth, segments, segments, segments);
+        const pos = geo.attributes.position;
+        const nor = geo.attributes.normal;
+        const p   = new THREE.Vector3();
+        const n   = new THREE.Vector3();
+        const hw  = width  / 2 - radius;
+        const hh  = height / 2 - radius;
+        const hd  = depth  / 2 - radius;
+        for (let i = 0; i < pos.count; i++) {
+            p.fromBufferAttribute(pos, i);
+            // Clamp to inner box, then push out by radius along corner normal
+            p.x = Math.sign(p.x || 1) * Math.min(Math.abs(p.x), hw);
+            p.y = Math.sign(p.y || 1) * Math.min(Math.abs(p.y), hh);
+            p.z = Math.sign(p.z || 1) * Math.min(Math.abs(p.z), hd);
+            n.copy(p).normalize();
+            p.addScaledVector(n, radius);
+            pos.setXYZ(i, p.x, p.y, p.z);
+            nor.setXYZ(i, n.x, n.y, n.z);
+        }
+        pos.needsUpdate = true;
+        nor.needsUpdate = true;
+        return geo;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Constants                                                           */
+    /* ------------------------------------------------------------------ */
+    const STORAGE_KEY    = 'gaslands_randomorg_apikey';
+    const RANDOM_ORG_URL = 'https://api.random.org/json-rpc/4/invoke';
+
+    // Three.js BoxGeometry face order: +X, -X, +Y, -Y, +Z, -Z
+    // We assign die values to faces so opposite faces sum to 7 (standard d6).
+    //   face material index: 0(+X)=2,  1(-X)=5,  2(+Y)=1,  3(-Y)=6,  4(+Z)=3,  5(-Z)=4
+    const FACE_VALUES = [2, 5, 1, 6, 3, 4];
+
+    // Euler rotations 
+    const VALUE_EULER = {
+        1: [0, 0, Math.PI/2],    // Face 0 (+X) points UP (+Y)
+        6: [0, 0, -Math.PI/2],   // Face 1 (-X) points UP (+Y)
+        2: [0, 0, 0],            // Face 2 (+Y) points UP (+Y)
+        5: [Math.PI, 0, 0],      // Face 3 (-Y) points UP (+Y)
+        3: [-Math.PI/2, 0, 0],   // Face 4 (+Z) points UP (+Y)
+        4: [Math.PI/2, 0, 0],    // Face 5 (-Z) points UP (+Y)
+    };
+
+    const OUTCOME_COLORS = {
+        shift:  '#64c832',
+        slide:  '#4a90e6',
+        spin:   '#e63264',
+        hazard: '#e6a020',
+    };
+
+    function valueToOutcome(v) {
+        if (v === 1 || v === 2) return 'shift';
+        if (v === 3)            return 'slide';
+        if (v === 4 || v === 6) return 'spin';
+        return 'hazard';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  TRNG / RNG                                                          */
+    /* ------------------------------------------------------------------ */
+    function localRoll(n) {
+        const buf = new Uint8Array(n * 4);
+        crypto.getRandomValues(buf);
+        return Array.from({ length: n }, (_, i) =>
+            (new DataView(buf.buffer, i * 4, 4).getUint32(0) % 6) + 1
+        );
+    }
+
+    async function fetchRolls(n) {
+        const apiKey = (localStorage.getItem(STORAGE_KEY) || '').trim();
+        if (!apiKey) return { nums: localRoll(n), trng: false };
+        try {
+            const res  = await fetch(RANDOM_ORG_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0', method: 'generateIntegers',
+                    params:  { apiKey, n, min: 1, max: 6, replacement: true },
+                    id: Date.now()
+                })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error.message);
+            return { nums: data.result.random.data, trng: true };
+        } catch (e) {
+            console.warn('[Dice3D] Random.org failed, using CSPRNG:', e.message);
+            return { nums: localRoll(n), trng: false };
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Face Texture Generator (Sprite Sheet)                               */
+    /* ------------------------------------------------------------------ */
+    const textureCache = {};
+    let spriteImage = null;
+
+    async function loadSpriteImage() {
+        if (spriteImage) return spriteImage;
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => { spriteImage = img; resolve(img); };
+            img.onerror = () => { console.error('Failed to load skid sprite'); resolve(null); };
+            img.src = typeof SPRITE_B64 !== 'undefined' ? SPRITE_B64 : 'skid_dice_sprites.png';
+        });
+    }
+
+    function makeFaceTexture(value) {
+        const diceType = document.getElementById('dice-type') ? document.getElementById('dice-type').value : 'skid';
+        const cacheKey = value + '_' + diceType;
+        if (textureCache[cacheKey]) return textureCache[cacheKey];
+        
+        const outcome = valueToOutcome(value);
+        const S = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = S;
+        const ctx = canvas.getContext('2d');
+
+        // Ensure canvas has a background colour to prevent black transparent areas
+        ctx.fillStyle = '#f2ede0';
+        ctx.fillRect(0, 0, S, S);
+
+        if (diceType === 'd6') {
+            // Draw classic D6 pips (dots)
+            ctx.fillStyle = '#111';
+            const r = 45;
+            const cx = S/2, cy = S/2;
+            const d = 140; // offset from center
+            const drawDot = (x, y) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill(); };
+            
+            if ([1,3,5].includes(value)) drawDot(cx, cy); // center
+            if ([2,3,4,5,6].includes(value)) { drawDot(cx - d, cy - d); drawDot(cx + d, cy + d); } // top-left to bottom-right
+            if ([4,5,6].includes(value)) { drawDot(cx + d, cy - d); drawDot(cx - d, cy + d); } // top-right to bottom-left
+            if (value === 6) { drawDot(cx - d, cy); drawDot(cx + d, cy); } // middle-left and middle-right
+            
+        } else {
+            // Draw Skid icons from sprite sheet
+            let sx = 0, sy = 0;
+            if (outcome === 'shift') { sx = 0; sy = 0; }
+            else if (outcome === 'spin') { sx = 512; sy = 0; }
+            else if (outcome === 'slide') { sx = 0; sy = 512; }
+            else if (outcome === 'hazard') { sx = 512; sy = 512; }
+
+            if (spriteImage) {
+                ctx.drawImage(spriteImage, sx, sy, 512, 512, 0, 0, S, S);
+            } else {
+                ctx.fillStyle = OUTCOME_COLORS[outcome] || '#fff';
+                ctx.fillRect(0, 0, S, S);
+            }
+        }
+
+        const tex = new THREE.CanvasTexture(canvas);
+        if (typeof renderer !== 'undefined' && renderer) {
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        }
+        textureCache[cacheKey] = tex;
+        return tex;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Three.js Scene                                                      */
+    /* ------------------------------------------------------------------ */
+    let scene, camera, renderer, shadowLight;
+    let physicsWorld;
+    let wallBodies = []; // Store references for dynamic resizing
+    let animId = null;
+    let diceObjs = []; // { mesh, body, targetQuat, settled, settleT }
+    let rollPhase  = 'idle'; // 'rolling' | 'settling' | 'done'
+    let rollTimer  = 0;
+    const ROLL_DURATION    = 2.8; // seconds of free physics
+    const SETTLE_DURATION  = 0.9; // seconds of interpolation
+
+    function initScene() {
+        if (renderer) return; // already initialised
+
+        const canvas = document.getElementById('dice3d-canvas');
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+        renderer.toneMapping       = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+
+        // Scene
+        scene = new THREE.Scene();
+
+        // Camera — looking straight down from above
+        camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+        camera.position.set(0, 15, 0);
+        camera.up.set(0, 0, -1); // Required when looking straight down the Y axis
+        camera.lookAt(0, 0, 0);
+
+        // Ambient light
+        const ambient = new THREE.AmbientLight(0xffeedd, 0.6);
+        scene.add(ambient);
+
+        // Main directional (sun-like) with shadows
+        shadowLight = new THREE.DirectionalLight(0xfff5e0, 1.8);
+        shadowLight.position.set(-2, 15, -4);
+        shadowLight.castShadow = true;
+        shadowLight.shadow.mapSize.width  = 2048;
+        shadowLight.shadow.mapSize.height = 2048;
+        shadowLight.shadow.camera.near   = 0.5;
+        shadowLight.shadow.camera.far    = 50;
+        shadowLight.shadow.camera.left   = -12;
+        shadowLight.shadow.camera.right  =  12;
+        shadowLight.shadow.camera.top    =  12;
+        shadowLight.shadow.camera.bottom = -12;
+        shadowLight.shadow.bias          = -0.001;
+        scene.add(shadowLight);
+
+        // Rim light from below-left (gives dice depth)
+        const rim = new THREE.PointLight(0x203040, 0.8, 30);
+        rim.position.set(-6, 2, -4);
+        scene.add(rim);
+
+        // Shadow catcher surface (invisible, but receives shadows)
+        const feltGeo  = new THREE.PlaneGeometry(40, 40);
+        const feltMat  = new THREE.ShadowMaterial({ opacity: 0.5 });
+        const felt = new THREE.Mesh(feltGeo, feltMat);
+        felt.rotation.x = -Math.PI / 2;
+        felt.receiveShadow = true;
+        scene.add(felt);
+
+        // Resize handler
+        resizeRenderer();
+        window.addEventListener('resize', resizeRenderer);
+    }
+
+    function resizeRenderer() {
+        if (!renderer) return;
+        const overlay = document.getElementById('dice3d-overlay');
+        const w = overlay.clientWidth;
+        const h = overlay.clientHeight;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+
+        // Dynamically adjust invisible physics walls to exactly match screen edges
+        if (wallBodies && wallBodies.length === 4) {
+            // Calculate visible screen bounds at y=0 based on camera distance (15) and FOV
+            const vFov = camera.fov * Math.PI / 180;
+            const visibleHeight = 2 * Math.tan(vFov / 2) * 15;
+            const visibleWidth  = visibleHeight * camera.aspect;
+
+            // Subtract 0.6 so the dice bounce right when they touch the screen edge
+            const zBound = (visibleHeight / 2) - 0.6;
+            const xBound = (visibleWidth / 2) - 0.6;
+
+            wallBodies[0].position.set(xBound, 0, 0);   // Right wall
+            wallBodies[1].position.set(-xBound, 0, 0);  // Left wall
+            wallBodies[2].position.set(0, 0, zBound);   // Bottom wall
+            wallBodies[3].position.set(0, 0, -zBound);  // Top wall
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Physics World                                                       */
+    /* ------------------------------------------------------------------ */
+    function initPhysics() {
+        physicsWorld = new CANNON.World();
+        physicsWorld.gravity.set(0, -28, 0);
+        physicsWorld.broadphase = new CANNON.NaiveBroadphase();
+        physicsWorld.allowSleep = false;
+
+        // Ground plane
+        const groundBody = new CANNON.Body({ mass: 0 });
+        groundBody.addShape(new CANNON.Plane());
+        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+        physicsWorld.addBody(groundBody);
+
+        // Invisible walls (keep dice on screen)
+        wallBodies = [
+            { rot: [0, -Math.PI/2, 0] }, // Right (+X)
+            { rot: [0,  Math.PI/2, 0] }, // Left (-X)
+            { rot: [0, Math.PI, 0]    }, // Bottom (+Z)
+            { rot: [0, 0, 0]          }, // Top (-Z)
+        ].map(function(w) {
+            const b = new CANNON.Body({ mass: 0 });
+            b.addShape(new CANNON.Plane());
+            b.quaternion.setFromEuler(w.rot[0], w.rot[1], w.rot[2]);
+            physicsWorld.addBody(b);
+            return b;
+        });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Die Creation                                                        */
+    /* ------------------------------------------------------------------ */
+    function createDie(targetValue, spawnIndex, totalDice) {
+        // --- Three.js mesh with perfectly flat box (matches physics box) ---
+        const geo  = new THREE.BoxGeometry(1.08, 1.08, 1.08);
+        const mats = FACE_VALUES.map(v =>
+            // BasicMaterial means NO lighting/shading, just the raw texture and colors.
+            new THREE.MeshBasicMaterial({
+                map: makeFaceTexture(v),
+            })
+        );
+        const mesh = new THREE.Mesh(geo, mats);
+        mesh.castShadow    = true;
+        mesh.receiveShadow = false;
+
+        // --- Spawn position: fan dice across bottom edge of screen ---
+        const spread  = Math.min(2.0 * (totalDice - 1), 8);
+        const xOffset = totalDice > 1
+            ? -spread / 2 + (spread / (totalDice - 1)) * spawnIndex
+            : 0;
+            
+        // Calculate safe spawn Z based on dynamic bottom wall
+        const vFov = camera.fov * Math.PI / 180;
+        const visibleHeight = 2 * Math.tan(vFov / 2) * 15;
+        const zBound = (visibleHeight / 2) - 0.6;
+        
+        // Spawn right at the bottom edge (+Z) slightly elevated
+        const spawnY  = 6 + Math.random() * 2;
+        const spawnZ  = zBound - 0.5;
+        mesh.position.set(xOffset, spawnY, spawnZ);
+        scene.add(mesh);
+
+        // --- Physics body (40% smaller) ---
+        const body = new CANNON.Body({
+            mass: 0.5,
+            shape: new CANNON.Box(new CANNON.Vec3(0.54, 0.54, 0.54)),
+            linearDamping:  0.15,
+            angularDamping: 0.15,
+        });
+        body.position.set(xOffset, spawnY, spawnZ);
+
+        // Random initial rotation
+        const q = new CANNON.Quaternion();
+        q.setFromEuler(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2);
+        body.quaternion.copy(q);
+
+        // Strong throw velocity UP the screen (-Z) with slight lateral spread
+        body.velocity.set(
+            (Math.random() - 0.5) * 6,
+            -2 - Math.random() * 2,
+            -10 - Math.random() * 6
+        );
+        // Strong random spin
+        body.angularVelocity.set(
+            (Math.random() - 0.5) * 22,
+            (Math.random() - 0.5) * 22,
+            (Math.random() - 0.5) * 22
+        );
+
+        physicsWorld.addBody(body);
+
+        // Pre-compute target quaternion for this die (TRNG Approach B)
+        const eulerArr   = VALUE_EULER[targetValue];
+        const targetEuler = new THREE.Euler(eulerArr[0], eulerArr[1], eulerArr[2]);
+        // Add many full rotations for natural-looking tumble into settle
+        const wobble = new THREE.Euler(
+            targetEuler.x + Math.round(Math.random() * 3 + 2) * Math.PI * 2,
+            targetEuler.y + Math.round(Math.random() * 3 + 2) * Math.PI * 2,
+            targetEuler.z + Math.round(Math.random() * 3 + 2) * Math.PI * 2
+        );
+        const targetQuat = new THREE.Quaternion().setFromEuler(wobble);
+        // The actual final (clean) target
+        const finalQuat  = new THREE.Quaternion().setFromEuler(targetEuler);
+
+        return { mesh, body, targetQuat, finalQuat, settled: false, settleT: 0 };
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Animation Loop                                                      */
+    /* ------------------------------------------------------------------ */
+    let lastTime = 0;
+
+    function animate(now) {
+        animId = requestAnimationFrame(animate);
+        const dt = Math.min((now - lastTime) / 1000, 0.05);
+        lastTime = now;
+
+        if (rollPhase === 'rolling') {
+            rollTimer += dt;
+            physicsWorld.step(1 / 60, dt, 3);
+
+            // Sync meshes to physics
+            diceObjs.forEach(d => {
+                d.mesh.position.copy(d.body.position);
+                d.mesh.quaternion.copy(d.body.quaternion);
+            });
+
+            if (rollTimer >= ROLL_DURATION) {
+                rollPhase = 'settling';
+                // Freeze physics bodies
+                diceObjs.forEach(d => {
+                    d.body.velocity.set(0, 0, 0);
+                    d.body.angularVelocity.set(0, 0, 0);
+                    d.body.mass = 0;
+                    d.body.updateMassProperties();
+                    // Capture current mesh quat as settle start
+                    d.startQuat = d.mesh.quaternion.clone();
+                    d.settleT = 0;
+                });
+            }
+
+        } else if (rollPhase === 'settling') {
+            rollTimer += dt;
+            const t = Math.min((rollTimer - ROLL_DURATION) / SETTLE_DURATION, 1);
+            const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+            let allDone = true;
+            diceObjs.forEach(d => {
+                d.mesh.quaternion.slerpQuaternions(d.startQuat, d.finalQuat, eased);
+                if (eased < 1) allDone = false;
+            });
+
+            if (allDone) {
+                rollPhase = 'done';
+                showResults();
+            }
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Results & History                                                   */
+    /* ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ */
+    let rollHistory = [];
+
+    function toggleDiceLog() {
+        const logEl = document.getElementById('dice-log');
+        if (!logEl) return;
+        if (logEl.style.display === 'none') {
+            logEl.style.display = 'block';
+        } else {
+            logEl.style.display = 'none';
+        }
+    }
+
+    function updateDiceLog() {
+        const logEl = document.getElementById('dice-log-content');
+        if (!logEl) return;
+        if (rollHistory.length === 0) {
+            logEl.innerHTML = 'No rolls yet...';
+            return;
+        }
+        logEl.innerHTML = rollHistory.map((r, i) => `<div style="padding:4px 0; opacity:${1 - i*0.08};">${r}</div>`).join('');
+    }
+
+    function showResults() {
+        const counts = { shift: 0, slide: 0, spin: 0, hazard: 0 };
+        const diceType = document.getElementById('dice-type') ? document.getElementById('dice-type').value : 'skid';
+        let rollResultStrings = [];
+
+        diceObjs.forEach(d => {
+            counts[d.outcome]++;
+            if (diceType === 'd6') {
+                rollResultStrings.push(d.value);
+            } else {
+                rollResultStrings.push(`<span style="color:${OUTCOME_COLORS[d.outcome]}">${d.outcome.toUpperCase()}</span>`);
+            }
+        });
+
+        // Add to history log
+        rollHistory.unshift(rollResultStrings.join(' • '));
+        if (rollHistory.length > 10) rollHistory.pop();
+        updateDiceLog();
+
+        let parts = [];
+        if (counts.shift)  parts.push(`<span class="rs-shift">${counts.shift}\u00d7 Shift</span>`);
+        if (counts.slide)  parts.push(`<span class="rs-slide">${counts.slide}\u00d7 Slide</span>`);
+        if (counts.spin)   parts.push(`<span class="rs-spin">${counts.spin}\u00d7 Spin</span>`);
+        if (counts.hazard) parts.push(`<span class="rs-hazard">${counts.hazard}\u00d7 Hazard</span>`);
+
+        const strip = document.getElementById('dice3d-result');
+        strip.innerHTML = parts.join(' &nbsp;·&nbsp; ');
+        strip.classList.add('visible');
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Public: throw N dice                                                */
+    /* ------------------------------------------------------------------ */
+    async function throwDice(n) {
+        const btn = document.getElementById('throw-dice-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Rolling…'; }
+
+        // 1. Get TRNG outcomes FIRST (Approach B)
+        const { nums, trng } = await fetchRolls(n);
+
+        // 1b. Load sprite sheet image for face textures
+        await loadSpriteImage();
+
+        // 2. Show overlay
+        const overlay = document.getElementById('dice3d-overlay');
+        overlay.classList.add('active');
+
+        // 3. Update TRNG badge
+        const badge = document.getElementById('dice3d-trng-badge');
+        badge.textContent = trng ? '\u2713 True Random (Random.org)' : '\u26a0 CSPRNG (local)';
+        badge.className   = 'dice3d-trng ' + (trng ? 'trng-ok' : 'trng-local');
+
+        // 4. Reset result strip
+        const strip = document.getElementById('dice3d-result');
+        strip.innerHTML = '';
+        strip.classList.remove('visible');
+
+        // 5. Init scene + physics (idempotent)
+        initScene();
+        initPhysics();
+        resizeRenderer(); // Must happen AFTER initPhysics so it can move the wall bodies
+
+        // 6. Clear old dice
+        diceObjs.forEach(d => {
+            scene.remove(d.mesh);
+            physicsWorld.removeBody(d.body);
+            d.mesh.geometry.dispose();
+        });
+        diceObjs = [];
+
+        // 7. Create dice (outcome determined by TRNG, stored in die object)
+        nums.forEach((val, i) => {
+            const die = createDie(val, i, n);
+            die.outcome = valueToOutcome(val);
+            die.value   = val;
+            diceObjs.push(die);
+        });
+
+        // 8. Start animation
+        rollPhase = 'rolling';
+        rollTimer = 0;
+        if (animId) cancelAnimationFrame(animId);
+        lastTime = performance.now();
+        animate(lastTime);
+
+        if (btn) { btn.disabled = false; btn.textContent = '\ud83c\udfb2 Throw Dice'; }
+    }
+
+    function dismissOverlay() {
+        if (rollPhase === 'rolling') return; // don't dismiss mid-roll
+        const overlay = document.getElementById('dice3d-overlay');
+        overlay.classList.remove('active');
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+        rollPhase = 'idle';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Wire up global bridge — deferred until ALL scripts have loaded     */
+    /* ------------------------------------------------------------------ */
+    window.addEventListener('load', function () {
+        if (typeof THREE === 'undefined') {
+            console.error('[Dice3D] Three.js failed to load from CDN. Check your internet connection.');
+            return;
+        }
+        if (typeof CANNON === 'undefined') {
+            console.error('[Dice3D] Cannon.js failed to load from CDN. Check your internet connection.');
+            return;
+        }
+        window._throwDice3D = throwDice;
+        window._dice3dReady = true;
+
+        window.dice3dOverlayClick = function(e) {
+            if (rollPhase === 'done' || rollPhase === 'idle') dismissOverlay();
+        };
+
+        console.log('[Dice3D] Ready — Three.js UMD + Cannon.js confirmed loaded.');
+    });
     </script>
 </body>
 </html>
+
