@@ -612,7 +612,7 @@
             border: 1px solid rgba(255,255,255,0.05);
             border-radius: 6px;
             color: var(--text-muted);
-            padding: 0.4rem 0;
+            padding: 0.2rem 0;
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             font-size: 0.9rem;
@@ -651,7 +651,7 @@
         }
 
         .hull-point-box {
-            aspect-ratio: 1;
+            aspect-ratio: 1.5;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255,255,255,0.05);
             border-radius: 4px;
@@ -709,7 +709,7 @@
         }
 
         .hazard-dot {
-            aspect-ratio: 1;
+            aspect-ratio: 1.5;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255,255,255,0.05);
             border-radius: 4px;
@@ -828,7 +828,7 @@
             background: rgba(27, 34, 22, 0.85);
             border: 1px solid var(--card-border);
             border-radius: 12px;
-            padding: 1rem;
+            padding: 0.5rem 1rem;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
@@ -1653,6 +1653,19 @@
         .sponsor-logo.logo-beverly { background-position: -66px -120px; }
         .sponsor-logo.logo-the-order-of-the-inferno { background-position: -132px -120px; }
         .sponsor-logo.logo-rustys-bootleggers { background-position: -198px -120px; }
+        .cmd-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background-color: var(--glow-color);
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -1679,6 +1692,10 @@
             </div>
             
             <div class="controls-panel">
+                <div class="input-group">
+                    <label for="team-name-input">Team Name</label>
+                    <input type="text" id="team-name-input" placeholder="Enter Team Name..." onchange="updateTeamName()" value="">
+                </div>
                 <div class="input-group" id="sponsor-input-group">
                     <label for="sponsor-select">Team Sponsor</label>
                     <select id="sponsor-select" onchange="changeSponsor()">
@@ -1771,11 +1788,14 @@
                         <option value="5">5 Dice</option>
                         <option value="6">6 Dice</option>
                     </select>
+                    <button id="api-key-btn" onclick="setRandomOrgApiKey()" style="font-family:'Orbitron',sans-serif; font-size:1.0rem; padding:0.25rem 0.6rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.4); color:var(--text-primary); cursor:pointer; transition:all 0.2s;" title="Set Random.org API Key">
+                        🔑
+                    </button>
                     <button id="dice-log-toggle-btn" onclick="toggleDiceLog()" style="font-family:'Orbitron',sans-serif; font-size:1.0rem; padding:0.25rem 0.6rem; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(0,0,0,0.4); color:var(--text-primary); cursor:pointer; transition:all 0.2s;" title="Toggle Dice History">
                         🕒
                     </button>
                     <button id="throw-dice-btn" onclick="throwSkidDice3D()" style="font-family:'Orbitron',sans-serif; font-size:0.72rem; font-weight:700; letter-spacing:1px; padding:0.38rem 0.9rem; border-radius:8px; border:2px solid var(--glow-color); background:linear-gradient(135deg,rgba(100,200,50,0.18),rgba(60,140,20,0.08)); color:var(--glow-color); cursor:pointer; transition:all 0.2s; text-transform:uppercase;">
-                        🎲 Throw Dice
+                        🎲 Roll
                     </button>
                 </div>
             </div>
@@ -1820,10 +1840,15 @@
                 </div>
             </div>
 
-            <!-- Roll History Log -->
-            <div id="dice-log" style="position:fixed; bottom:20px; left:20px; width:220px; background:rgba(10,20,10,0.8); border:1px solid rgba(100,200,50,0.2); border-radius:8px; padding:10px; font-family:'Orbitron',sans-serif; font-size:0.75rem; color:var(--text-muted); z-index:1000; pointer-events:none; display:none;">
-                <div style="color:var(--glow-color); border-bottom:1px solid rgba(100,200,50,0.2); padding-bottom:5px; margin-bottom:5px; font-weight:bold;">ROLL HISTORY</div>
-                <div id="dice-log-content">No rolls yet...</div>
+            <!-- Roll History Log (CMD Window Style) -->
+            <div id="dice-log" style="position:fixed; bottom:20px; left:20px; width:480px; background:rgba(0,5,0,0.95); border:1px solid var(--glow-color); border-radius:4px; font-family:'Consolas', 'Courier New', monospace; font-size:0.8rem; color:var(--glow-color); z-index:1000; display:none; flex-direction:column; box-shadow:0 0 15px rgba(100,200,50,0.2); overflow:hidden;">
+                <div id="dice-log-header" style="background:var(--glow-color); color:#000; padding:4px 8px; font-weight:bold; font-size:0.75rem; display:flex; justify-content:space-between; align-items:center; cursor:move; pointer-events:auto;">
+                    <span>C:\GASLANDS\ROLL_HISTORY.EXE</span>
+                    <button onclick="toggleDiceLog()" style="background:transparent; border:none; color:#000; font-weight:bold; cursor:pointer; padding:0; line-height:1; font-family:sans-serif;">X</button>
+                </div>
+                <div id="dice-log-content" style="padding:10px; height:200px; overflow-y:auto; pointer-events:auto; text-shadow: 0 0 5px rgba(100,200,50,0.5); display:flex; flex-direction:column; gap:4px; font-size:0.75rem;">
+                    <div>> No rolls yet...<span class="cmd-cursor"></span></div>
+                </div>
             </div>
 
             <!-- ===== 3D DICE OVERLAY ===== -->
@@ -2031,19 +2056,20 @@
             { name: "Oil Slick Dropper", range: "Dropped", dice: "-", special: "Ammo 3. Treacherous.", slots: 0, cost: 2, ammo: 3, category: "Dropped" },
             { name: "RC Car Bombs", range: "Dropped", dice: "4D6", special: "Ammo 3. Drop lightweight tiny RC car, explodes on wreck.", slots: 0, cost: 3, ammo: 3, category: "Dropped" },
             { name: "Sentry Gun", range: "Dropped", dice: "2D6", special: "Ammo 3. Drop lightweight sentry, shoots nearby enemies.", slots: 0, cost: 3, ammo: 3, category: "Dropped" },
-            { name: "Smoke Dropper", range: "Dropped", dice: "-", special: "Ammo 3. Distracted & +1 hazard to vehicles touching template.", slots: 0, cost: 1, ammo: 3, category: "Dropped" }
+            { name: "Smoke Dropper", range: "Dropped", dice: "-", special: "Ammo 3. Distracted & +1 hazard to vehicles touching template.", slots: 0, cost: 1, ammo: 3, category: "Dropped" },
+            // Melee
+            { name: "Exploding Ram", range: "Smash", dice: "+6D6", special: "Declare facing. Non-lightweight only. +6 attack dice. Suffer 1 damage for each 1 or 2 rolled. (Once)", slots: 0, cost: 3, ammo: 1, category: "Basic" },
+            { name: "Ram", range: "Smash", dice: "+2D6", special: "Declare facing. +2 Smash Attack dice, ignore hazards from collision on this facing.", slots: 1, cost: 4, category: "Basic" }
         ];
 
         const UPGRADES = [
             { name: "Armour Plating", slots: 1, cost: 4, special: "+2 Hull Points. Can be purchased multiple times." },
             { name: "Experimental Nuclear Engine", slots: 0, cost: 5, electrical: true, special: "Mishkin only. Non-lightweight only. +2 Max Gear, Long Straight is permitted, explodes on Flip failure." },
             { name: "Experimental Teleporter", slots: 0, cost: 7, electrical: true, special: "Mishkin only. Teleport start of activation on Skid Die check." },
-            { name: "Exploding Ram", slots: 0, cost: 3, ammo: 1, special: "Declare facing. Non-lightweight only. +6 attack dice. Suffer 1 damage for each 1 or 2 rolled. (Once)" },
             { name: "Extra Crewmember", slots: 0, cost: 4, special: "+1 Crew, up to double the vehicle's starting Crew Value." },
             { name: "Improvised Sludge Thrower", slots: 1, cost: 2, special: "May place burst template anywhere in Medium range, 360-deg Arc." },
             { name: "Louder Siren", slots: 0, cost: 2, special: "Highway Patrol only. Siren applies to any enemy vehicle, not just bogey." },
             { name: "Nitro Booster", slots: 0, cost: 6, ammo: 1, special: "Ammo 1. Start of movement: forced Long Straight move, set hazards to 5, no reverse. Repeat at end of movement." },
-            { name: "Ram", slots: 1, cost: 4, special: "Declare facing. +2 Smash Attack dice, ignore hazards from collision on this facing." },
             { name: "Roll Cage", slots: 1, cost: 4, special: "Ignore the 2 damage received from a flip." },
             { name: "Tank Tracks", slots: 1, cost: 4, special: "-1 Max Gear, +1 Handling, ignore rough/treacherous surfaces. (No tank/heli/gyro)" }
         ];
@@ -2183,6 +2209,7 @@
     <script>
         // State variables
         let appState = {
+            teamName: "",
             sponsor: "Sponsorless",
             budget: 50,
             mode: "garage", // "garage", "play", or "prompt"
@@ -2326,6 +2353,7 @@
         }
 
         function renderHeader() {
+            document.getElementById("team-name-input").value = appState.teamName || "";
             document.getElementById("sponsor-select").value = appState.sponsor;
             document.getElementById("budget-input").value = appState.budget;
             document.getElementById("votes-display-val").textContent = appState.votes;
@@ -2356,6 +2384,11 @@
                 opt.textContent = spName;
                 select.appendChild(opt);
             });
+        }
+
+        function updateTeamName() {
+            appState.teamName = document.getElementById("team-name-input").value;
+            saveState();
         }
 
         function changeSponsor() {
@@ -3072,20 +3105,10 @@
                             if (appState.sponsor === "Idris" && u.name === "Nitro Booster") cost = 3;
                             if (appState.sponsor === "Scarlett" && u.name === "Extra Crewmember") cost = 2;
                             
-                            // Check if upgrade is a Ram / Exploding Ram (designation needed)
-                            const needsFacing = u.name === "Ram" || u.name === "Exploding Ram";
-                            const facingSelectorHtml = needsFacing ? 
-                                `<select style="padding: 0.1rem; font-size: 0.75rem; width: 75px; margin-right: 0.5rem;" onchange="changeUpgradeFacing('${vehicle.id}', ${index}, this.value)">
-                                    <option value="Front" ${u.facing === 'Front' ? 'selected' : ''}>Front</option>
-                                    <option value="Rear" ${u.facing === 'Rear' ? 'selected' : ''}>Rear</option>
-                                </select>` : '';
-                            
-                            const facingDisplay = u.facing ? ` (${u.facing})` : '';
-
                             upgradesHtml += `
                                 <div class="equipped-item">
                                     <div class="equipped-item-details">
-                                        <div class="equipped-item-name">${u.name}${facingDisplay}</div>
+                                        <div class="equipped-item-name">${u.name}</div>
                                         <div class="equipped-item-desc">${u.slots > 0 ? `${u.slots} Slots` : '0 Slots'}</div>
                                     </div>
                                     <div class="item-controls">
@@ -3365,10 +3388,13 @@
                     let isWipeout = vehicle.hazard >= hazardLimit;
 
                     // Play Mode image header if exists (styled for floating right next to name)
-                    let playImageHtml = "";
+                    let playImageHtml = `
+                        <div style="flex: 1.5; max-width: 180px; height: 80px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--card-border); background: rgba(0,0,0,0.15); z-index: 2;">
+                            <span style="font-size: 0.65rem; color: var(--text-muted); font-family: 'Orbitron', sans-serif;">NO IMAGE</span>
+                        </div>`;
                     if (vehicle.imageUrl) {
                         playImageHtml = `
-                            <div style="flex: 1.5; max-width: 180px; height: 60px; border-radius: 6px; overflow: hidden; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.15); z-index: 2;">
+                            <div style="flex: 1.5; max-width: 180px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid var(--card-border); box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.15); z-index: 2;">
                                 <img src="${vehicle.imageUrl}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                             </div>
                         `;
@@ -3868,24 +3894,13 @@
         function selectUpgrade(u) {
             const v = appState.vehicles.find(car => car.id === activeModalTargetVehicleId);
             if (v) {
-                const needsFacing = u.name === "Ram" || u.name === "Exploding Ram";
                 v.upgrades.push({
                     name: u.name,
                     slots: u.slots,
                     cost: u.cost,
                     ammo: u.ammo || null,
-                    special: u.special,
-                    facing: needsFacing ? "Front" : null
+                    special: u.special
                 });
-                renderVehicles();
-                saveState();
-            }
-        }
-
-        function changeUpgradeFacing(vehicleId, upgradeIndex, val) {
-            const v = appState.vehicles.find(car => car.id === vehicleId);
-            if (v && v.upgrades[upgradeIndex]) {
-                v.upgrades[upgradeIndex].facing = val;
                 renderVehicles();
                 saveState();
             }
@@ -4199,22 +4214,17 @@
 
             let description = "";
             let loadout = [];
+            let hasRam = false;
             // Only include car-mounted weapons (exclude Crew Fired and RC Car Bombs)
             v.weapons.forEach(w => {
+                if (w.name === "Ram" || w.name === "Exploding Ram") hasRam = true;
                 if (w.category !== "Crew Fired" && w.name.toLowerCase() !== "rc car bombs") {
-                    const facing = w.facing ? `${w.facing.toLowerCase()}-mounted ` : "";
+                    const facing = (w.facing && w.facing !== "360°") ? `${w.facing.toLowerCase()}-mounted ` : "";
                     loadout.push(`${facing}${w.name.toLowerCase()}`);
                 }
             });
-            let hasRam = false;
             v.upgrades.forEach(u => {
-                if (u.name === "Ram" || u.name === "Exploding Ram") {
-                    hasRam = true;
-                    const facing = u.facing ? `${u.facing.toLowerCase()}-mounted ` : "front-mounted ";
-                    loadout.push(`${facing}${u.name.toLowerCase()}`);
-                } else {
-                    loadout.push(u.name.toLowerCase());
-                }
+                loadout.push(u.name.toLowerCase());
             });
             
             let loadoutText = "";
@@ -4229,22 +4239,22 @@
                 ramInstructions = " Any rams must be fitted completely flush to the front and/or rear bumper of the vehicle body with zero gap, acting directly as the vehicle's bumper. Absolutely no extensions, no poles, no struts, no bars, no stilts, and no connection brackets extending the ram away from the body frame. The ram is welded directly to the bumper.";
             }
 
+            let teamSponsorDesc = "";
+            if (appState.teamName) teamSponsorDesc += ` from the team '${appState.teamName}'`;
+            if (appState.sponsor && appState.sponsor !== "Sponsorless") teamSponsorDesc += `, sponsored by ${appState.sponsor} with custom decals`;
+
             if (purpose === "3d-model") {
                 // 3D Model render
                 description = `Isometric 3D model render of a post-apocalyptic Mad Max combat ${typeDesc}`;
                 if (v.name) description += ` named '${v.name}'`;
-                if (appState.sponsor && appState.sponsor !== "Sponsorless") {
-                    description += `, sponsored by ${appState.sponsor} with custom decals`;
-                }
+                description += teamSponsorDesc;
                 description += loadoutText;
                 description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, clear solid white background, studio product lighting, 3d game asset, perfect for 3D modeling software input, highly detailed clay render. No text, no letters, no labels, no watermarks on the image.${ramInstructions}`;
             } else {
                 // In-Game full color render
                 description = `Isometric 3D model render of a post-apocalyptic Mad Max combat ${typeDesc}`;
                 if (v.name) description += ` named '${v.name}'`;
-                if (appState.sponsor && appState.sponsor !== "Sponsorless") {
-                    description += `, sponsored by ${appState.sponsor} with custom decals`;
-                }
+                description += teamSponsorDesc;
                 description += loadoutText;
                 description += `. Floating in a pure white empty void with no ground plane and no floor surface, the wheels are not touching any ground. Completely shadowless, zero shadows, absolutely no drop shadows, no cast shadows, no ground shadows, no contact shadows under the wheels, and no ambient occlusion shadows under the vehicle chassis. Isometric projection, 3/4 angled view, full color concept art render, isolated on solid white background for transparency masking, studio product lighting, 3d game asset, perfect for game UI card art, highly detailed. No text, no letters, no labels, no watermarks on the image.${ramInstructions}`;
             }
@@ -5210,7 +5220,7 @@
     let diceObjs = []; // { mesh, body, targetQuat, settled, settleT }
     let rollPhase  = 'idle'; // 'rolling' | 'settling' | 'done'
     let rollTimer  = 0;
-    const ROLL_DURATION    = 2.8; // seconds of free physics
+    const ROLL_DURATION    = 5.6; // seconds of free physics
     const SETTLE_DURATION  = 0.9; // seconds of interpolation
 
     function initScene() {
@@ -5380,15 +5390,15 @@
 
         // Strong throw velocity UP the screen (-Z) with slight lateral spread
         body.velocity.set(
-            (Math.random() - 0.5) * 6,
-            -2 - Math.random() * 2,
-            -10 - Math.random() * 6
+            (Math.random() - 0.5) * 12,
+            -4 - Math.random() * 4,
+            -20 - Math.random() * 12
         );
         // Strong random spin
         body.angularVelocity.set(
-            (Math.random() - 0.5) * 22,
-            (Math.random() - 0.5) * 22,
-            (Math.random() - 0.5) * 22
+            (Math.random() - 0.5) * 44,
+            (Math.random() - 0.5) * 44,
+            (Math.random() - 0.5) * 44
         );
 
         physicsWorld.addBody(body);
@@ -5469,11 +5479,22 @@
     /* ------------------------------------------------------------------ */
     let rollHistory = [];
 
+    function setRandomOrgApiKey() {
+        const currentKey = localStorage.getItem(STORAGE_KEY) || '';
+        const key = prompt("Enter your Random.org API Key to enable True Random Number Generation (TRNG):", currentKey);
+        if (key !== null) {
+            localStorage.setItem(STORAGE_KEY, key.trim());
+            alert(key.trim() ? "Random.org API Key saved! Dice rolls will now use TRNG." : "API Key cleared. Dice rolls will use local PRNG.");
+        }
+    }
+
     function toggleDiceLog() {
         const logEl = document.getElementById('dice-log');
         if (!logEl) return;
         if (logEl.style.display === 'none') {
-            logEl.style.display = 'block';
+            logEl.style.display = 'flex';
+            const contentEl = document.getElementById('dice-log-content');
+            if (contentEl) contentEl.scrollTop = contentEl.scrollHeight;
         } else {
             logEl.style.display = 'none';
         }
@@ -5483,11 +5504,59 @@
         const logEl = document.getElementById('dice-log-content');
         if (!logEl) return;
         if (rollHistory.length === 0) {
-            logEl.innerHTML = 'No rolls yet...';
+            logEl.innerHTML = '<div>> No rolls yet...<span class="cmd-cursor"></span></div>';
             return;
         }
-        logEl.innerHTML = rollHistory.map((r, i) => `<div style="padding:4px 0; opacity:${1 - i*0.08};">${r}</div>`).join('');
+        logEl.innerHTML = rollHistory.map((r) => `<div style="margin-bottom:2px;">> ${r}</div>`).join('') + '<div style="margin-top:2px;">><span class="cmd-cursor"></span></div>';
+        logEl.scrollTop = logEl.scrollHeight;
     }
+
+    // Make the dice log draggable
+    function makeDraggable(elmnt, header) {
+        var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        if (header) {
+            header.onmousedown = dragMouseDown;
+        } else {
+            elmnt.onmousedown = dragMouseDown;
+        }
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            if (e.target.tagName.toLowerCase() === 'button') return;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            // remove bottom positioning so top/left take precedence
+            elmnt.style.bottom = "auto";
+            elmnt.style.right = "auto";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const logWindow = document.getElementById('dice-log');
+        const logHeader = document.getElementById('dice-log-header');
+        if (logWindow && logHeader) {
+            makeDraggable(logWindow, logHeader);
+        }
+    });
 
     function showResults() {
         const counts = { shift: 0, slide: 0, spin: 0, hazard: 0 };
@@ -5504,8 +5573,8 @@
         });
 
         // Add to history log
-        rollHistory.unshift(rollResultStrings.join(' • '));
-        if (rollHistory.length > 10) rollHistory.pop();
+        rollHistory.push(rollResultStrings.join(' • '));
+        if (rollHistory.length > 30) rollHistory.shift();
         updateDiceLog();
 
         let parts = [];
@@ -5574,7 +5643,7 @@
         lastTime = performance.now();
         animate(lastTime);
 
-        if (btn) { btn.disabled = false; btn.textContent = '\ud83c\udfb2 Throw Dice'; }
+        if (btn) { btn.disabled = false; btn.textContent = '🎲 Roll'; }
     }
 
     function dismissOverlay() {
