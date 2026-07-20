@@ -4290,9 +4290,12 @@
         // Reset
         function confirmReset() {
             if (confirm("Are you sure you want to clear your current team? All customizations will be lost.")) {
+                appState.teamName = "";
+                appState.sponsor = "Sponsorless";
                 appState.vehicles = [];
                 appState.votes = 0;
-                addVehicle(false);
+                appState.turn = 1;
+                appState.phase = 1;
                 renderVehicles();
                 renderHeader();
                 saveState();
