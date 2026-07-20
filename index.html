@@ -1666,6 +1666,30 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
+        .dice-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-15px);
+            background: rgba(5, 15, 5, 0.95);
+            border: 1px solid var(--glow-color);
+            color: var(--glow-color);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(100, 200, 50, 0.4);
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .dice-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -1776,11 +1800,12 @@
                 </div>
                 <!-- Throw Dice controls -->
                 <div style="display:flex; align-items:center; gap:0.5rem; margin-left:auto;">
-                    <select id="dice-type" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
+                    <div id="dice-toast-notification" class="dice-toast"></div>
+                    <select id="dice-type" onchange="showDiceConfigToast()" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
                         <option value="skid" selected>Skid Dice</option>
                         <option value="d6">Standard D6</option>
                     </select>
-                    <select id="throw-dice-count" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
+                    <select id="throw-dice-count" onchange="showDiceConfigToast()" style="background:#000; border:1px solid rgba(255,255,255,0.12); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.5rem; font-family:'Orbitron',sans-serif; font-size:0.72rem; cursor:pointer;">
                         <option value="1">1 Die</option>
                         <option value="2">2 Dice</option>
                         <option value="3" selected>3 Dice</option>
@@ -2288,6 +2313,54 @@
             renderHeader();
             renderSponsorInfo();
             renderVehicles();
+        });
+
+        let diceToastTimer = null;
+        function showDiceConfigToast() {
+            const countEl = document.getElementById('throw-dice-count');
+            const typeEl  = document.getElementById('dice-type');
+            const toastEl = document.getElementById('dice-toast-notification');
+            if (!countEl || !typeEl || !toastEl) return;
+            
+            const count = countEl.value;
+            const typeName = typeEl.value === 'd6' ? 'Standard D6' : 'Skid Dice';
+            const dieText  = count === '1' ? 'Die' : 'Dice';
+            
+            toastEl.textContent = `🎲 ${count} ${typeName} (${dieText})`;
+            toastEl.classList.add('show');
+            
+            if (diceToastTimer) clearTimeout(diceToastTimer);
+            diceToastTimer = setTimeout(() => {
+                toastEl.classList.remove('show');
+            }, 2000);
+        }
+
+        window.addEventListener("keydown", (e) => {
+            const activeEl = document.activeElement;
+            const isEditing = activeEl && (
+                activeEl.tagName === "INPUT" ||
+                activeEl.tagName === "TEXTAREA" ||
+                activeEl.tagName === "SELECT" ||
+                activeEl.isContentEditable
+            );
+            if (isEditing || appState.mode !== "play") return;
+
+            if (e.code === "Space" || e.key === " ") {
+                e.preventDefault();
+                throwSkidDice3D();
+            } else if (e.key >= "1" && e.key <= "6") {
+                const countSelect = document.getElementById("throw-dice-count");
+                if (countSelect) {
+                    countSelect.value = e.key;
+                    showDiceConfigToast();
+                }
+            } else if (e.key === "s" || e.key === "S") {
+                const typeSelect = document.getElementById("dice-type");
+                if (typeSelect) {
+                    typeSelect.value = typeSelect.value === "skid" ? "d6" : "skid";
+                    showDiceConfigToast();
+                }
+            }
         });
 
         // Save State
@@ -4061,7 +4134,11 @@
 
         // Team Backup export / import files
         function exportTeam() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const exportData = {
+                ...appState,
+                randomOrgApiKey: localStorage.getItem('gaslands_randomorg_apikey') || ''
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href",     dataStr);
             downloadAnchor.setAttribute("download", `${appState.sponsor.replace(/\s+/g, '_')}_gaslands_team.json`);
@@ -4083,7 +4160,12 @@
                 try {
                     const parsed = JSON.parse(e.target.result);
                     if (parsed && Array.isArray(parsed.vehicles)) {
-                        appState = { ...appState, ...parsed };
+                        if (parsed.randomOrgApiKey !== undefined && parsed.randomOrgApiKey !== null) {
+                            localStorage.setItem('gaslands_randomorg_apikey', parsed.randomOrgApiKey);
+                        }
+                        const { randomOrgApiKey, ...stateData } = parsed;
+                        appState = { ...appState, ...stateData };
+                        delete appState.randomOrgApiKey;
                         
                         // Fallbacks for turn/phase
                         if (appState.turn === undefined) appState.turn = 1;
