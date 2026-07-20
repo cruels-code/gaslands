@@ -5219,8 +5219,10 @@
     let diceObjs = []; // { mesh, body, targetQuat, settled, settleT }
     let rollPhase  = 'idle'; // 'rolling' | 'settling' | 'done'
     let rollTimer  = 0;
-    const ROLL_DURATION    = 5.6; // seconds of free physics
-    const SETTLE_DURATION  = 0.9; // seconds of interpolation
+    let settleStartTimer = 0;
+    const MIN_ROLL_DURATION = 1.1;
+    const MAX_ROLL_DURATION = 2.0;
+    const SETTLE_DURATION   = 0.35;
 
     function initScene() {
         if (renderer) return; // already initialised
@@ -5438,8 +5440,11 @@
                 d.mesh.quaternion.copy(d.body.quaternion);
             });
 
-            if (rollTimer >= ROLL_DURATION) {
+            // Trigger settling early if dice have naturally slowed down, or at max duration
+            const allSlow = diceObjs.length > 0 && diceObjs.every(d => d.body.velocity.length() < 1.8 && d.body.angularVelocity.length() < 3.5);
+            if ((rollTimer >= MIN_ROLL_DURATION && allSlow) || rollTimer >= MAX_ROLL_DURATION) {
                 rollPhase = 'settling';
+                settleStartTimer = rollTimer;
                 // Freeze physics bodies
                 diceObjs.forEach(d => {
                     d.body.velocity.set(0, 0, 0);
@@ -5448,22 +5453,20 @@
                     d.body.updateMassProperties();
                     // Capture current mesh quat as settle start
                     d.startQuat = d.mesh.quaternion.clone();
-                    d.settleT = 0;
                 });
             }
 
         } else if (rollPhase === 'settling') {
             rollTimer += dt;
-            const t = Math.min((rollTimer - ROLL_DURATION) / SETTLE_DURATION, 1);
-            const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            const t = Math.min((rollTimer - settleStartTimer) / SETTLE_DURATION, 1);
+            // Ease-out cubic curve: snappy initial transition that glides fluidly into final face
+            const eased = 1 - Math.pow(1 - t, 3);
 
-            let allDone = true;
             diceObjs.forEach(d => {
                 d.mesh.quaternion.slerpQuaternions(d.startQuat, d.finalQuat, eased);
-                if (eased < 1) allDone = false;
             });
 
-            if (allDone) {
+            if (t >= 1) {
                 rollPhase = 'done';
                 showResults();
             }
